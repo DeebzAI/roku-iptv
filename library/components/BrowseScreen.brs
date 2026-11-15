@@ -224,6 +224,7 @@ sub showHero(item as Object)
     if kind = "live" then
         queueArt("logo", item.HDPosterUrl)
         m.heroMeta.text = m.heroRowTitle
+        if item.Description <> invalid and item.Description <> "" then m.heroMeta.text = m.heroRowTitle + "   ·   " + item.Description
         g = freshGuide(m.epgCache, item.id)
         if g <> invalid then showGuide(g) else m.heroDesc.text = ""
     else if kind = "movie" then

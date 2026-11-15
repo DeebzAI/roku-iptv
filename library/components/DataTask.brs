@@ -19,7 +19,7 @@ sub init()
     m.notEventCatRe = CreateObject("roRegex", "SPORT\+|FANDUEL|REPLAY|TEAMS|NETWORK", "i")
     m.vsRe = CreateObject("roRegex", "\s(VS\.?|V\.?|@)\s", "i")
     m.noEventRe = CreateObject("roRegex", "NO EVENT|NO GAME|OFF ?AIR|NO STREAM|STAND ?BY|COMING SOON", "i")
-    m.leaguePrefixRe = CreateObject("roRegex", "^([A-Z+]{2,10}\s){0,3}\d{1,3}\s*[:|\-](?!\d)\s*", "")
+    m.leaguePrefixRe = CreateObject("roRegex", "^([A-Z+]{2,10}\s*[|:\-]?\s*){0,3}\d{1,3}\s*[:|\-](?!\d)\s*", "")
     m.isoRe = CreateObject("roRegex", "(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(:\d{2})?", "")
     m.timeRe = CreateObject("roRegex", "(\d{1,2}):(\d{2})\s*([AP]\.?M\.?)?\s*(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT|UK|GMT|BST|UTC|CET|CEST)?", "i")
     m.dateRe = CreateObject("roRegex", "\b(\d{1,2})[/.](\d{1,2})([/.]\d{2,4})?\b", "")
@@ -508,6 +508,7 @@ function parseEventTime(name as String, nowTs as Integer) as Integer
     mi = 0
     zone = ""
     dateGiven = false
+    europeZone = false
 
     iso = m.isoRe.Match(name)
     if iso.Count() >= 6 then
@@ -522,14 +523,21 @@ function parseEventTime(name as String, nowTs as Integer) as Integer
     else
         tm = m.timeRe.Match(name)
         if tm.Count() < 3 then return 0
-        h = tm[1].ToInt()
+        hourText = tm[1]
+        h = hourText.ToInt()
         mi = tm[2].ToInt()
         ampm = ""
         if tm.Count() > 3 then ampm = UCase(tm[3])
         if tm.Count() > 4 then zone = UCase(tm[4])
+        if zone = "" then
+            zm = m.zoneRe.Match(name)
+            if zm.Count() >= 2 then zone = UCase(zm[1])
+        end if
+        europeZone = (zone = "UK" or zone = "GMT" or zone = "BST" or zone = "UTC" or zone = "CET" or zone = "CEST")
         if Left(ampm, 1) = "P" and h < 12 then h = h + 12
         if Left(ampm, 1) = "A" and h = 12 then h = 0
-        if ampm = "" and h >= 1 and h <= 11 then h = h + 12 ' sports default to evening
+        ' "7:30" with no AM/PM is probably evening; "01:30" or a UK/EU time is a 24-hour clock
+        if ampm = "" and not europeZone and Left(hourText, 1) <> "0" and h >= 1 and h <= 11 then h = h + 12
 
         md = monthDay(name, mo, d)
         if md <> invalid then
@@ -551,7 +559,22 @@ function parseEventTime(name as String, nowTs as Integer) as Integer
     dt.FromISO8601String(y.ToStr() + "-" + pad2(mo) + "-" + pad2(d) + "T00:00:00")
     ts = dt.AsSeconds() + h * 3600 + mi * 60
     ts = ts + CreateObject("roDateTime").GetTimeZoneOffset() * 60
-    if not dateGiven and ts < nowTs - 6 * 3600 then ts = ts + 86400
+    if not dateGiven then
+        ' a weekday like "Wed" with no date: move to that day
+        wd = m.dayNameRe.Match(name)
+        if wd.Count() >= 2 then
+            days = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 }
+            target = days[UCase(Left(wd[1], 3))]
+            if target <> invalid then
+                ahead = (target - today.GetDayOfWeek() + 7) MOD 7
+                ' UK-time listings for late US games carry the next day's name
+                if ahead = 1 and europeZone = true and h <= 6 then ahead = 0
+                ts = ts + ahead * 86400
+                return ts
+            end if
+        end if
+        if ts < nowTs - 6 * 3600 then ts = ts + 86400
+    end if
     return ts
 end function
 
