@@ -39,6 +39,9 @@ sub init()
     updateClock()
 
     m.video.observeField("state", "onVideoState")
+    m.video.notificationInterval = 5
+    m.video.observeField("position", "onVideoPosition")
+    m.lastSave = 0
 
     url = loadSetting("playlistUrl")
     if url = "" then
@@ -65,7 +68,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v7.3)")
+    showMessage("Signing in...  (v7.4)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -172,8 +175,14 @@ end sub
 sub onPlayRequest(event as Object)
     req = event.getData()
     m.playingLive = false
+    m.resumeKey = ""
+    if req.resumeKey <> invalid then m.resumeKey = req.resumeKey
+    m.startAt = 0
+    if req.startAt <> invalid then m.startAt = req.startAt
     startPlayback(req.url, req.title, req.format, false)
-    showOsdText(req.title, req.subtitle)
+    sub2 = req.subtitle
+    if m.startAt > 0 then sub2 = "Resuming at " + fmtClock(m.startAt)
+    showOsdText(req.title, sub2)
 end sub
 
 ' ---------- playback ----------
@@ -205,6 +214,7 @@ sub playAttempt()
     content.streamFormat = fmt
     content.live = req.live
     if sendUa and m.ua <> "" then content.HttpHeaders = ["User-Agent:" + m.ua]
+    if not req.live and m.startAt <> invalid and m.startAt > 0 then content.PlayStart = m.startAt
     print "IPTV play attempt "; m.attempt; " fmt="; fmt; " ua="; sendUa; " url="; req.url
     m.video.control = "stop"
     m.video.content = content
@@ -223,22 +233,47 @@ sub playLive(row as Object, index as Integer)
     m.zapRow = row
     m.zapIndex = index
     m.playingLive = true
+    m.resumeKey = ""
+    m.startAt = 0
     startPlayback(ch.url, ch.title, "hls", true)
     showOsd(ch)
 end sub
 
 sub stopVideo()
+    saveProgress()
     m.video.control = "stop"
     m.video.visible = false
     hideOsd()
     if m.details <> invalid then
+        m.details.refresh = true
         m.details.setFocus(true)
     else
         focusScreen()
     end if
 end sub
 
+sub onVideoPosition()
+    if m.playingLive or m.resumeKey = invalid or m.resumeKey = "" then return
+    posSecs = Int(m.video.position)
+    if Abs(posSecs - m.lastSave) >= 15 then saveProgress()
+end sub
+
+sub saveProgress()
+    if m.playingLive or m.resumeKey = invalid or m.resumeKey = "" then return
+    posSecs = Int(m.video.position)
+    dur = Int(m.video.duration)
+    if posSecs <= 0 then return
+    m.lastSave = posSecs
+    saveResume(m.resumeKey, posSecs, dur)
+end sub
+
 sub onVideoState()
+    if m.video.state = "finished" then
+        if m.resumeKey <> invalid and m.resumeKey <> "" then saveResume(m.resumeKey, 0, 0)
+        m.resumeKey = ""
+        stopVideo()
+        return
+    end if
     if m.video.state <> "error" then return
     code = m.video.errorCode
     msg = m.video.errorMsg

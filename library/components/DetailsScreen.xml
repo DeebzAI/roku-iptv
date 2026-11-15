@@ -5,6 +5,7 @@
     <field id="userAgent" type="string" />
     <field id="item" type="node" onChange="onItem" />
     <field id="playRequest" type="assocarray" alwaysNotify="true" />
+    <field id="refresh" type="boolean" alwaysNotify="true" onChange="refreshResume" />
   </interface>
   <children>
     <Rectangle width="1920" height="1080" color="0x0E1116FF" />
@@ -16,8 +17,12 @@
     <Label id="plot" translation="[100,285]" width="1050" height="200" wrap="true" maxLines="5" color="0xD0D6DCFF" />
 
     <Group id="playBtn" translation="[100,540]" focusable="true">
-      <Poster id="playPill" uri="libpkg:/images/pill.9.png" width="280" height="80" />
-      <Label id="playLabel" width="280" height="80" horizAlign="center" vertAlign="center" text="Play" color="0x0E1116FF" />
+      <Poster id="playPill" uri="libpkg:/images/pill.9.png" width="340" height="80" />
+      <Label id="playLabel" width="340" height="80" horizAlign="center" vertAlign="center" text="Play" color="0x0E1116FF" />
+    </Group>
+    <Group id="restartBtn" translation="[470,540]" focusable="true" visible="false">
+      <Poster id="restartPill" uri="libpkg:/images/pill.9.png" width="300" height="80" />
+      <Label id="restartLabel" width="300" height="80" horizAlign="center" vertAlign="center" text="Start Over" color="0x0E1116FF" />
     </Group>
 
     <LabelList id="seasons" translation="[100,540]" itemSize="[300,62]" numRows="7" visible="false"

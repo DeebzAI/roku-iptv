@@ -175,7 +175,7 @@ end function
 
 sub doVodInfo(req as Object)
     data = getJson(apiUrl("get_vod_info") + "&vod_id=" + req.id, m.top.userAgent)
-    out = { id: req.id, plot: "", year: "", genre: "", duration: "", rating: "", backdrop: "", cast: "" }
+    out = { id: req.id, plot: "", year: "", genre: "", duration: "", rating: "", backdrop: "", cast: "", quality: "", size: "" }
     if data <> invalid and data.info <> invalid then
         i = data.info
         out.plot = asStr(i.plot)
@@ -187,9 +187,39 @@ sub doVodInfo(req as Object)
         out.rating = asStr(i.rating)
         out.cast = asStr(i.cast)
         if type(i.backdrop_path) = "roArray" and i.backdrop_path.Count() > 0 then out.backdrop = asStr(i.backdrop_path[0])
+        out.quality = qualityLabel(i.video)
+        secs = asStr(i.duration_secs).ToInt()
+        kbps = asStr(i.bitrate).ToInt()
+        if secs > 0 and kbps > 0 then
+            gb = (kbps * secs) / 8.0 / 1000000.0
+            if gb >= 1 then
+                out.size = Str(Int(gb * 10) / 10.0).Trim() + " GB"
+            else
+                out.size = Int(gb * 1000).ToStr() + " MB"
+            end if
+        end if
     end if
     m.top.result = out
 end sub
+
+function qualityLabel(v as Dynamic) as String
+    if type(v) <> "roAssociativeArray" then return ""
+    w = asStr(v.width).ToInt()
+    h = asStr(v.height).ToInt()
+    label = ""
+    if w >= 3200 or h >= 1800 then
+        label = "4K"
+    else if w >= 1800 or h >= 1000 then
+        label = "1080p"
+    else if w >= 1200 or h >= 700 then
+        label = "720p"
+    else if w > 0 or h > 0 then
+        label = "SD"
+    end if
+    codec = LCase(asStr(v.codec_name))
+    if codec = "hevc" or codec = "h265" then label = label + " HEVC"
+    return label.Trim()
+end function
 
 sub doSeriesInfo(req as Object)
     data = getJson(apiUrl("get_series_info") + "&series_id=" + req.id, m.top.userAgent)
@@ -235,7 +265,7 @@ sub doSeriesInfo(req as Object)
                 title = asStr(e.title)
                 dur = ""
                 if e.info <> invalid then dur = fmtMinutes(e.info.duration)
-                list.Push({ num: asStr(e.episode_num), title: title, duration: dur, url: c.base + "/series/" + c.user + "/" + c.pass + "/" + eid + "." + ext, fmt: formatFor(ext) })
+                list.Push({ id: eid, num: asStr(e.episode_num), title: title, duration: dur, url: c.base + "/series/" + c.user + "/" + c.pass + "/" + eid + "." + ext, fmt: formatFor(ext) })
             end for
         end if
         if list.Count() > 0 then

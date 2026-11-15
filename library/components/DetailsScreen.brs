@@ -7,6 +7,12 @@ sub init()
     m.meta = m.top.findNode("meta")
     m.plot = m.top.findNode("plot")
     m.playBtn = m.top.findNode("playBtn")
+    m.restartBtn = m.top.findNode("restartBtn")
+    m.playPill = m.top.findNode("playPill")
+    m.restartPill = m.top.findNode("restartPill")
+    m.playLabel = m.top.findNode("playLabel")
+    m.restartLabel = m.top.findNode("restartLabel")
+    m.top.findNode("restartLabel").font = makeFont(32, true)
     m.seasons = m.top.findNode("seasons")
     m.episodes = m.top.findNode("episodes")
     m.status = m.top.findNode("status")
@@ -30,6 +36,7 @@ sub onFocusChanged()
     if not m.top.hasFocus() then return
     if m.mode = "movie" then
         m.playBtn.setFocus(true)
+        styleButtons()
     else if m.seriesData <> invalid and m.seriesData.seasons.Count() > 0 then
         m.seasons.setFocus(true)
     end if
@@ -52,6 +59,7 @@ sub onItem()
     t.userAgent = m.top.userAgent
     if m.mode = "movie" then
         m.playBtn.visible = true
+        refreshResume()
         t.request = { mode: "vodinfo", id: item.id }
     else
         m.playBtn.visible = false
@@ -87,7 +95,7 @@ sub onInfo()
     if r.plot <> invalid and r.plot <> "" then m.plot.text = r.plot
     if r.backdrop <> invalid and r.backdrop <> "" then showBackdrop(r.backdrop)
     if m.mode = "movie" then
-        m.meta.text = joinParts([r.year, r.genre, r.duration, ratingText(r.rating)])
+        m.meta.text = joinParts([r.year, r.genre, r.duration, r.quality, r.size, ratingText(r.rating)])
         return
     end if
 
@@ -126,6 +134,8 @@ sub fillEpisodes(idx as Integer)
         label = e.title
         if e.num <> "" then label = e.num + ".   " + label
         if e.duration <> "" then label = label + "   (" + e.duration + ")"
+        posSecs = getResume("e" + e.id)
+        if posSecs > 0 then label = label + "   ·  resume at " + fmtClock(posSecs)
         c.title = label
     end for
     m.episodes.content = content
@@ -135,15 +145,26 @@ sub onEpisodeSelected()
     list = m.seriesData.episodes[m.currentSeason]
     e = list[m.episodes.itemSelected]
     if e = invalid then return
-    m.top.playRequest = { url: e.url, title: e.title, format: e.fmt, subtitle: m.top.item.title + "  ·  Season " + m.currentSeason }
+    m.top.playRequest = { url: e.url, title: e.title, format: e.fmt, subtitle: m.top.item.title + "  ·  Season " + m.currentSeason, resumeKey: "e" + e.id, startAt: getResume("e" + e.id) }
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
     if not press then return false
     if m.mode = "movie" then
+        item = m.top.item
         if key = "OK" and m.playBtn.hasFocus() then
-            item = m.top.item
-            m.top.playRequest = { url: item.url, title: item.title, format: item.fmt, subtitle: m.meta.text }
+            m.top.playRequest = { url: item.url, title: item.title, format: item.fmt, subtitle: m.meta.text, resumeKey: "m" + item.id, startAt: getResume("m" + item.id) }
+            return true
+        else if key = "OK" and m.restartBtn.hasFocus() then
+            m.top.playRequest = { url: item.url, title: item.title, format: item.fmt, subtitle: m.meta.text, resumeKey: "m" + item.id, startAt: 0 }
+            return true
+        else if key = "right" and m.playBtn.hasFocus() and m.restartBtn.visible then
+            m.restartBtn.setFocus(true)
+            styleButtons()
+            return true
+        else if key = "left" and m.restartBtn.hasFocus() then
+            m.playBtn.setFocus(true)
+            styleButtons()
             return true
         end if
     else
@@ -157,3 +178,40 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     end if
     return false
 end function
+
+' Movie buttons: "Resume (32:10)" + "Start Over" when there's a saved spot.
+sub refreshResume()
+    item = m.top.item
+    if item = invalid then return
+    if m.mode = "movie" then
+        posSecs = getResume("m" + item.id)
+        if posSecs > 0 then
+            m.playLabel.text = "Resume  (" + fmtClock(posSecs) + ")"
+            m.restartBtn.visible = true
+        else
+            m.playLabel.text = "Play"
+            m.restartBtn.visible = false
+            if m.restartBtn.hasFocus() then m.playBtn.setFocus(true)
+        end if
+        styleButtons()
+    else if m.seriesData <> invalid then
+        sel = m.episodes.itemFocused
+        fillEpisodes(m.seasons.itemFocused)
+        if sel >= 0 then m.episodes.jumpToItem = sel
+    end if
+end sub
+
+sub styleButtons()
+    focusedPlay = not m.restartBtn.hasFocus()
+    if focusedPlay then
+        m.playPill.opacity = 1.0
+        m.playLabel.color = "0x0E1116FF"
+        m.restartPill.opacity = 0.18
+        m.restartLabel.color = "0xFFFFFFFF"
+    else
+        m.playPill.opacity = 0.18
+        m.playLabel.color = "0xFFFFFFFF"
+        m.restartPill.opacity = 1.0
+        m.restartLabel.color = "0x0E1116FF"
+    end if
+end sub

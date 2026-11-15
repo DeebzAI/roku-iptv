@@ -287,7 +287,7 @@ sub showPosterArt(url as Dynamic)
 end sub
 
 sub applyInfo(item as Object, info as Object)
-    m.heroMeta.text = joinParts([info.year, info.genre, info.duration, ratingText(info.rating)])
+    m.heroMeta.text = joinParts([info.year, info.genre, info.duration, info.quality, ratingText(info.rating)])
     m.heroDesc.text = info.plot
     if info.backdrop <> "" then showBackdrop(info.backdrop) else showPosterArt(item.HDPosterUrl)
 end sub

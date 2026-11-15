@@ -90,3 +90,61 @@ function parseXtream(url as String) as Dynamic
     if b.Count() < 2 or u.Count() < 2 or p.Count() < 2 then return invalid
     return { base: b[1], user: u[1], pass: p[1] }
 end function
+
+' ---------- resume positions (kept small: registry space is limited) ----------
+
+function resumeTable() as Object
+    sec = CreateObject("roRegistrySection", "IPTVPlayer")
+    if sec.Exists("resume") then
+        t = ParseJson(sec.Read("resume"))
+        if type(t) = "roAssociativeArray" then return t
+    end if
+    return {}
+end function
+
+function getResume(key as String) as Integer
+    if key = "" then return 0
+    e = resumeTable()[key]
+    if e = invalid then return 0
+    return e.p
+end function
+
+sub saveResume(key as String, posSecs as Integer, dur as Integer)
+    if key = "" then return
+    t = resumeTable()
+    ' Forget it if barely started or basically finished.
+    if posSecs < 60 or (dur > 0 and posSecs > dur * 0.94) then
+        t.Delete(key)
+    else
+        t[key] = { p: posSecs, d: dur, t: CreateObject("roDateTime").AsSeconds() }
+    end if
+    ' Keep only the 40 most recent.
+    while t.Count() > 40
+        oldestKey = ""
+        oldest = 2147483647
+        for each k in t
+            if t[k].t < oldest then
+                oldest = t[k].t
+                oldestKey = k
+            end if
+        end for
+        t.Delete(oldestKey)
+    end while
+    sec = CreateObject("roRegistrySection", "IPTVPlayer")
+    sec.Write("resume", FormatJson(t))
+    sec.Flush()
+end sub
+
+function fmtClock(secs as Integer) as String
+    h = Int(secs / 3600)
+    mi = Int((secs MOD 3600) / 60)
+    se = secs MOD 60
+    ss = se.ToStr()
+    if se < 10 then ss = "0" + ss
+    if h > 0 then
+        mm = mi.ToStr()
+        if mi < 10 then mm = "0" + mm
+        return h.ToStr() + ":" + mm + ":" + ss
+    end if
+    return mi.ToStr() + ":" + ss
+end function
