@@ -4,8 +4,19 @@ sub init()
     m.top.functionName = "execute"
     m.ukRe = CreateObject("roRegex", "(^|[^A-Z])(UK|GB|U\.K|BRITISH|ENGLAND|SCOTLAND|WALES|NORTHERN IRELAND)([^A-Z]|$)", "i")
     m.usRe = CreateObject("roRegex", "(^|[^A-Z])(US|USA|UNITED STATES|AMERICA|AMERICAN)([^A-Z]|$)", "i")
-    m.sportsRe = CreateObject("roRegex", "SPORT|NFL|NBA|WNBA|MLB|NHL|NCAA|ESPN|UFC|PPV|MLS|WWE|AEW|GOLF|TENNIS|BOXING|F1|FORMULA|NASCAR|INDYCAR|FOOTBALL|BASKETBALL|BASEBALL|HOCKEY|SOCCER|DAZN|FANDUEL|BALLY|BIG ?TEN|BIG ?12|SEC NETWORK|ACC NETWORK|PAC|FIGHT|RACING|MMA|OLYMPIC|GAME ?PASS|SUNDAY TICKET|LEAGUE|NFHS", "i")
+    m.sportsRe = CreateObject("roRegex", "SPORT|NFL|NBA|WNBA|MLB|NHL|NCAA|ESPN|UFC|PPV|MLS|WWE|AEW|GOLF|TENNIS|BOXING|F1|FORMULA|NASCAR|INDYCAR|FOOTBALL|BASKETBALL|BASEBALL|HOCKEY|SOCCER|DAZN|FANDUEL|BALLY|BIG ?TEN|BIG ?12|SEC NETWORK|ACC NETWORK|PAC|FIGHT|RACING|MMA|OLYMPIC|GAME ?PASS|SUNDAY TICKET|LEAGUE|NFHS|FLOW|MILB|NJCAA|FITE", "i")
     m.adultRe = CreateObject("roRegex", "ADULT|XXX|18\+|PORN|FOR ADULTS", "i")
+    m.ieRe = CreateObject("roRegex", "(^|[^A-Z])(IE|IRELAND|IRISH)([^A-Z]|$)", "i")
+    m.spanishCatRe = CreateObject("roRegex", "LATIN|TELEMUNDO|UNIVISION|TUDN|ESPA(N|Ñ)OL|DEPORTES|MEXIC", "i")
+    m.junkLiveRe = CreateObject("roRegex", "KIDS|BABY", "i")
+    m.localCatRe = CreateObject("roRegex", "(ABC|CBS|FOX|NBC|PBS) NETWORK|CW & MY", "i")
+    m.spanishChanRe = CreateObject("roRegex", "DEPORTES|ESPA(N|Ñ)OL|TUDN|TELEMUNDO|UNIVISION|UNIMAS|GALAVISION|\(ES\)|SPANISH", "i")
+    m.audioRe = CreateObject("roRegex", "RADIO|AUDIO|SIRIUS|MUSIC CHOICE|STINGRAY|PODCAST", "i")
+    m.bostonRe = CreateObject("roRegex", "BOSTON|WCVB|WBZ|WFXT|WBTS|WHDH|WGBH|WLVI|WSBK|NECN", "i")
+    m.prefixRe = CreateObject("roRegex", "^(US|USA|UK|CA)\s*[:|\-]\s*", "i")
+    m.qualityRe = CreateObject("roRegex", "(^|\s|\(|\[)(SD|HD|FHD|UHD|4K|HEVC|H265|RAW|HQ|LQ|1080P?|720P?|60FPS|50FPS)(?=$|\s|\)|\])", "i")
+    m.spacesRe = CreateObject("roRegex", "[\s\(\)\[\]]+", "")
+    m.sdRe = CreateObject("roRegex", "(^|\s|\(|\[)SD($|\s|\)|\])", "i")
 end sub
 
 sub execute()
@@ -77,69 +88,214 @@ sub doCategories(req as Object)
     if kind = "movies" then action = "get_vod_categories"
     if kind = "series" then action = "get_series_categories"
     data = getJson(apiUrl(action), m.top.userAgent)
-    us = []
-    other = []
+    kept = []
+    localIds = []
+    idx = 0
     if type(data) = "roArray" then
         for each c in data
-            name = asStr(c.category_name).Trim()
-            if name <> "" and not m.ukRe.IsMatch(name) and not m.adultRe.IsMatch(name) then
-                sporty = m.sportsRe.IsMatch(name)
+            raw = asStr(c.category_name).Trim()
+            up = UCase(raw)
+            idx = idx + 1
+            if raw <> "" and not m.ukRe.IsMatch(raw) and not m.ieRe.IsMatch(raw) and not m.adultRe.IsMatch(raw) and not m.spanishCatRe.IsMatch(raw) then
+                sporty = m.sportsRe.IsMatch(raw)
                 keep = true
                 if kind = "sports" and not sporty then keep = false
                 if kind = "live" and sporty then keep = false
+                if kind = "live" and m.junkLiveRe.IsMatch(raw) then keep = false
                 if keep then
-                    entry = { id: asStr(c.category_id), name: name }
-                    if m.usRe.IsMatch(name) then us.Push(entry) else other.Push(entry)
+                    cid = asStr(c.category_id)
+                    if kind = "live" and m.localCatRe.IsMatch(raw) then localIds.Push(cid)
+                    rank = categoryRank(kind, up)
+                    if not m.usRe.IsMatch(raw) and rank >= 90 then rank = rank + 50
+                    kept.Push({ id: cid, name: prettyName(raw), sortKey: rank * 10000 + idx })
                 end if
             end if
         end for
     end if
-    us.Append(other)
-    m.top.result = { cats: us }
+    if kind = "live" and localIds.Count() > 0 then
+        ids = ""
+        for each i in localIds
+            if ids <> "" then ids = ids + ","
+            ids = ids + i
+        end for
+        kept.Push({ id: "local:" + ids, name: "Boston Local", sortKey: 0 })
+    end if
+    kept.SortBy("sortKey")
+    out = []
+    for each k in kept
+        out.Push({ id: k.id, name: k.name })
+    end for
+    m.top.result = { cats: out }
 end sub
+
+' Lower rank = higher up the screen.
+function categoryRank(kind as String, up as String) as Integer
+    r = 90
+    if kind = "sports" then
+        rules = [["SPORT+", 1], ["FANDUEL", 2], ["NFL", 10], ["NCAAF", 12], ["WNBA", 45], ["NBA", 14], ["NCAAW", 46], ["NCAAB", 16], ["NHL", 18], ["MILB", 60], ["MLB", 20], ["UFC", 25], ["BOXING", 26], ["PAY PER VIEW", 28], ["PPV", 30], ["ESPN", 32], ["PEACOCK", 34], ["PARAMOUNT", 34], ["SLING", 35], ["MLS", 40], ["SOCCER", 41], ["TENNIS", 50], ["COLLEGE BASEBALL", 52], ["FLOW", 55], ["MOTOGP", 56], ["MXGP", 56], ["NJCAA", 62], ["SOFTBALL", 62]]
+        for each rule in rules
+            if Instr(1, up, rule[0]) > 0 then
+                r = rule[1]
+                exit for
+            end if
+        end for
+        if Instr(1, up, "REPLAY") > 0 then r = r + 100
+    else if kind = "live" then
+        rules = [["24/7", 50], ["OD REALITY", 45], ["OD ", 60], ["NEWS", 10], ["ENTERTAINMENT", 20], ["HBO", 31], ["SHOWTIME", 32], ["STARZ", 33], ["MOVIES", 30], ["DOCU", 40], ["REALITY", 45], ["OD ", 60], ["SPECTRUM", 70], ["ABC NETWORK", 80], ["CBS NETWORK", 81], ["FOX NETWORK", 82], ["NBC NETWORK", 83], ["PBS", 84], ["CW", 85], ["HALLMARK", 95], ["MUSIC", 96]]
+        for each rule in rules
+            if Instr(1, up, rule[0]) > 0 then
+                r = rule[1]
+                exit for
+            end if
+        end for
+    end if
+    return r
+end function
+
+' "┃USA┃ DOCU | LIFESTYLE" -> "Docs & Lifestyle"
+function prettyName(raw as String) as String
+    name = stripBoxPrefix(raw)
+    up = UCase(name)
+    special = { "SPORT+": "Sports Channels", "NEWS NETWORK": "News", "DOCU | LIFESTYLE": "Docs & Lifestyle", "MOVIES | SERIES": "Movies & Series", "FANDUEL SPORTS NETWORK": "FanDuel Sports (Regional)", "CW & MY": "CW & MyNetwork Stations", "OD REALITY SHOW": "Reality Shows", "PAY PER VIEW": "Pay-Per-View", "PAY PER VIEW REPLAY": "Pay-Per-View Replays" }
+    if special.DoesExist(up) then return special[up]
+    if Left(up, 3) = "OD " then name = Mid(name, 4) + " (On Demand)"
+    if Right(up, 8) = " NETWORK" and Len(up) <= 12 then name = Left(name, Len(name) - 8) + " Stations"
+    name = name.Replace(" | ", " · ")
+    return titleCase(name)
+end function
+
+function stripBoxPrefix(raw as String) as String
+    bar = Chr(&h2503)
+    name = raw.Trim()
+    if Left(name, 1) = bar then
+        p = Instr(2, name, bar)
+        if p > 0 then name = Mid(name, p + 1).Trim()
+    end if
+    return name
+end function
+
+function titleCase(s as String) as String
+    keepUpper = { NFL: 1, NBA: 1, WNBA: 1, NHL: 1, MLB: 1, MILB: 1, MLS: 1, UFC: 1, PPV: 1, HBO: 1, ABC: 1, CBS: 1, NBC: 1, PBS: 1, CW: 1, MY: 1, NCAAF: 1, NCAAB: 1, NCAA: 1, NJCAA: 1, ESPN: 1, "ESPN+": 1, "BET+": 1, ALLBLK: 1, TV: 1, "TV+": 1, VIP: 1, FITE: 1, MXGP: 1, MOTOGP: 1, "24/7": 1, "APPLE+": 1, USA: 1, US: 1 }
+    out = ""
+    for each w in s.Tokenize(" ")
+        uw = UCase(w)
+        if keepUpper.DoesExist(uw) then
+            word = uw
+            if uw = "MOTOGP" then word = "MotoGP"
+            if uw = "MILB" then word = "MiLB"
+            if uw = "APPLE+" then word = "Apple TV+"
+        else if Len(w) > 0 then
+            word = UCase(Left(w, 1)) + LCase(Mid(w, 2))
+        else
+            word = w
+        end if
+        if out <> "" then out = out + " "
+        out = out + word
+    end for
+    return out
+end function
+
+' Channel name cleanup: drop "USA: " / "US| " / "┃US┃ " prefixes.
+function cleanChannelName(raw as String) as String
+    name = stripBoxPrefix(raw)
+    if m.prefixRe.IsMatch(name) then name = m.prefixRe.Replace(name, "")
+    return name.Trim()
+end function
+
+function baseChannelName(name as String) as String
+    b = m.qualityRe.ReplaceAll(UCase(name), " ")
+    b = m.spacesRe.ReplaceAll(b, " ")
+    return b.Trim()
+end function
 
 sub doItems(req as Object)
     kind = req.kind
-    action = "get_live_streams"
-    if kind = "movies" then action = "get_vod_streams"
-    if kind = "series" then action = "get_series"
-    data = getJson(apiUrl(action) + "&category_id=" + req.categoryId, m.top.userAgent)
     c = m.top.xtream
     row = CreateObject("roSGNode", "ContentNode")
     count = 0
-    if type(data) = "roArray" then
-        for each st in data
-            if count >= 150 then exit for
-            name = asStr(st.name).Trim()
-            if name <> "" and not m.ukRe.IsMatch(Left(name, 6)) then
-                item = row.createChild("ContentNode")
-                item.title = name
-                if kind = "movies" then
-                    sid = asStr(st.stream_id)
-                    ext = asStr(st.container_extension)
-                    if ext = "" then ext = "mp4"
-                    item.id = sid
-                    item.HDPosterUrl = asStr(st.stream_icon)
-                    item.addFields({ kind: "movie", cardType: "poster", url: c.base + "/movie/" + c.user + "/" + c.pass + "/" + sid + "." + ext, fmt: formatFor(ext), rating: asStr(st.rating), backdrop: "" })
-                else if kind = "series" then
-                    item.id = asStr(st.series_id)
-                    item.HDPosterUrl = asStr(st.cover)
-                    item.Description = asStr(st.plot)
-                    bd = ""
-                    if type(st.backdrop_path) = "roArray" and st.backdrop_path.Count() > 0 then bd = asStr(st.backdrop_path[0])
-                    year = Left(asStr(st.releaseDate), 4)
-                    if year = "" then year = Left(asStr(st.release_date), 4)
-                    item.addFields({ kind: "series", cardType: "poster", url: "", fmt: "", rating: asStr(st.rating), backdrop: bd, genre: asStr(st.genre), year: year })
-                else
-                    sid = asStr(st.stream_id)
-                    item.id = sid
-                    item.HDPosterUrl = asStr(st.stream_icon)
-                    item.addFields({ kind: "live", cardType: "tile", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls" })
+
+    if kind = "movies" or kind = "series" then
+        action = "get_vod_streams"
+        if kind = "series" then action = "get_series"
+        data = getJson(apiUrl(action) + "&category_id=" + req.categoryId, m.top.userAgent)
+        if type(data) = "roArray" then
+            for each st in data
+                if count >= 150 then exit for
+                name = asStr(st.name).Trim()
+                if name <> "" and not m.ukRe.IsMatch(Left(name, 6)) then
+                    item = row.createChild("ContentNode")
+                    item.title = name
+                    if kind = "movies" then
+                        sid = asStr(st.stream_id)
+                        ext = asStr(st.container_extension)
+                        if ext = "" then ext = "mp4"
+                        item.id = sid
+                        item.HDPosterUrl = asStr(st.stream_icon)
+                        item.addFields({ kind: "movie", cardType: "poster", url: c.base + "/movie/" + c.user + "/" + c.pass + "/" + sid + "." + ext, fmt: formatFor(ext), rating: asStr(st.rating), backdrop: "" })
+                    else
+                        item.id = asStr(st.series_id)
+                        item.HDPosterUrl = asStr(st.cover)
+                        item.Description = asStr(st.plot)
+                        bd = ""
+                        if type(st.backdrop_path) = "roArray" and st.backdrop_path.Count() > 0 then bd = asStr(st.backdrop_path[0])
+                        year = Left(asStr(st.releaseDate), 4)
+                        if year = "" then year = Left(asStr(st.release_date), 4)
+                        item.addFields({ kind: "series", cardType: "poster", url: "", fmt: "", rating: asStr(st.rating), backdrop: bd, genre: asStr(st.genre), year: year })
+                    end if
+                    count = count + 1
                 end if
-                count = count + 1
-            end if
-        end for
+            end for
+        end if
+        m.top.node = row
+        m.top.result = { rowIndex: req.rowIndex, count: count }
+        return
     end if
+
+    ' ----- live / sports channels -----
+    streams = []
+    catId = req.categoryId
+    bostonOnly = false
+    if Left(catId, 6) = "local:" then
+        bostonOnly = true
+        for each oneId in Mid(catId, 7).Tokenize(",")
+            part = getJson(apiUrl("get_live_streams") + "&category_id=" + oneId, m.top.userAgent)
+            if type(part) = "roArray" then streams.Append(part)
+        end for
+    else
+        part = getJson(apiUrl("get_live_streams") + "&category_id=" + catId, m.top.userAgent)
+        if type(part) = "roArray" then streams = part
+    end if
+
+    ' First pass: clean names, drop junk, note which channels have a non-SD copy.
+    entries = []
+    hasGood = {}
+    for each st in streams
+        raw = asStr(st.name).Trim()
+        name = cleanChannelName(raw)
+        skip = (name = "") or m.spanishChanRe.IsMatch(raw) or m.audioRe.IsMatch(raw) or m.ukRe.IsMatch(Left(raw, 8))
+        if not skip and bostonOnly and not m.bostonRe.IsMatch(raw) then skip = true
+        if not skip and Left(name, 4) = "####" then skip = true ' divider rows some providers use
+        if not skip then
+            base = baseChannelName(name)
+            isSD = m.sdRe.IsMatch(name)
+            if not isSD then hasGood[base] = true
+            entries.Push({ st: st, name: name, base: base, sd: isSD })
+        end if
+    end for
+
+    for each e in entries
+        if count >= 300 then exit for
+        if not (e.sd and hasGood[e.base] = true) then
+            st = e.st
+            sid = asStr(st.stream_id)
+            item = row.createChild("ContentNode")
+            item.title = e.name
+            item.id = sid
+            item.HDPosterUrl = asStr(st.stream_icon)
+            item.addFields({ kind: "live", cardType: "tile", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls" })
+            count = count + 1
+        end if
+    end for
     m.top.node = row
     m.top.result = { rowIndex: req.rowIndex, count: count }
 end sub
