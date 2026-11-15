@@ -1,52 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="AppRoot" extends="Group">
   <children>
-    <Rectangle id="bg" width="1920" height="1080" color="0x101418FF" />
-
-    <Label id="header" translation="[80,50]" text="IPTV Player  v6"
-      font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
-    <Label id="hint" translation="[80,115]"
-      text="Left/Right: switch lists   OK: play   *: change playlist   In video: Up/Down changes channel"
-      font="font:SmallestSystemFont" color="0x8899AAFF" />
-
-    <Rectangle id="divider" translation="[610,180]" width="2" height="660" color="0x2A3440FF" />
-
-    <LabelList id="groupList" translation="[80,180]"
-      itemSize="[500,60]" numRows="11"
-      vertFocusAnimationStyle="floatingFocus"
-      color="0xC0C8D0FF" focusedColor="0x101418FF" />
-
-    <LabelList id="channelList" translation="[650,180]"
-      itemSize="[1190,60]" numRows="11"
-      vertFocusAnimationStyle="floatingFocus"
-      color="0xC0C8D0FF" focusedColor="0x101418FF" />
-
-    <Label id="status" translation="[0,500]" width="1920" horizAlign="center"
-      wrap="true" font="font:MediumSystemFont" color="0xFFFFFFFF" />
-
-    <!-- Guide panel for the highlighted channel -->
-    <Group id="guide" translation="[650,860]" visible="false">
-      <Rectangle width="1190" height="170" color="0x1A222BFF" />
-      <Label id="guideNow" translation="[30,20]" width="1130" font="font:MediumBoldSystemFont" color="0xFFFFFFFF" />
-      <Rectangle id="guideBarBg" translation="[30,72]" width="400" height="8" color="0x2A3440FF" />
-      <Rectangle id="guideBar" translation="[30,72]" width="0" height="8" color="0x50A0FFFF" />
-      <Label id="guideTime" translation="[450,62]" width="700" font="font:SmallSystemFont" color="0x8899AAFF" />
-      <Label id="guideNext" translation="[30,110]" width="1130" font="font:SmallSystemFont" color="0xC0C8D0FF" />
-    </Group>
+    <Rectangle width="1920" height="1080" color="0x0E1116FF" />
+    <Group id="screens" />
+    <NavBar id="nav" translation="[0,40]" visible="false" />
+    <Label id="clock" translation="[1560,52]" width="280" horizAlign="right" color="0xB8C0C8FF" />
+    <Group id="detailsHost" />
+    <Label id="status" translation="[0,500]" width="1920" horizAlign="center" wrap="true" color="0xFFFFFFFF" />
 
     <Video id="video" width="1920" height="1080" visible="false" />
 
-    <!-- Info bar shown over the video when a channel starts -->
-    <Group id="osd" translation="[0,800]" visible="false">
-      <Rectangle width="1920" height="280" color="0x000000C0" />
-      <Label id="osdChannel" translation="[80,30]" width="1760" font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
-      <Label id="osdNow" translation="[80,100]" width="1760" font="font:MediumSystemFont" color="0xFFFFFFFF" />
-      <Rectangle translation="[80,155]" width="600" height="8" color="0x404850FF" />
-      <Rectangle id="osdBar" translation="[80,155]" width="0" height="8" color="0x50A0FFFF" />
-      <Label id="osdTime" translation="[700,143]" width="600" font="font:SmallSystemFont" color="0xA0A8B0FF" />
-      <Label id="osdNext" translation="[80,190]" width="1760" font="font:SmallSystemFont" color="0xC0C8D0FF" />
+    <Group id="osd" translation="[0,780]" visible="false">
+      <Rectangle width="1920" height="300" color="0x0E1116D8" />
+      <Label id="osdChannel" translation="[100,40]" width="1720" color="0xFFFFFFFF" />
+      <Label id="osdNow" translation="[100,112]" width="1720" color="0xFFFFFFFF" />
+      <Rectangle id="osdBarBg" translation="[100,170]" width="600" height="6" color="0x404850FF" />
+      <Rectangle id="osdBar" translation="[100,170]" width="0" height="6" color="0xFFFFFFFF" />
+      <Label id="osdTime" translation="[730,156]" width="900" color="0xA0A8B0FF" />
+      <Label id="osdNext" translation="[100,205]" width="1720" color="0xC0C8D0FF" />
     </Group>
   </children>
-
+  <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
   <script type="text/brightscript" uri="libpkg:/components/AppRoot.brs" />
 </component>

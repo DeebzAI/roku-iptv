@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="PosterCard" extends="Group">
+  <interface>
+    <field id="itemContent" type="node" onChange="onContent" />
+    <field id="focusPercent" type="float" onChange="onFocus" />
+    <field id="rowFocusPercent" type="float" />
+    <field id="itemHasFocus" type="boolean" />
+    <field id="rowHasFocus" type="boolean" />
+  </interface>
+  <children>
+    <Group id="card">
+      <Poster id="bg" uri="libpkg:/images/card.9.png" />
+      <Label id="placeholder" horizAlign="center" vertAlign="center" wrap="true" color="0x8D97A3FF" />
+      <MaskGroup id="mask" maskUri="libpkg:/images/mask_poster.png" visible="false">
+        <Poster id="img" loadDisplayMode="scaleToFill" />
+      </MaskGroup>
+      <Poster id="logo" loadDisplayMode="scaleToFit" visible="false" />
+      <Poster id="ring" uri="libpkg:/images/ring.9.png" opacity="0" />
+    </Group>
+    <Label id="title" color="0x8D97A3FF" />
+  </children>
+  <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
+  <script type="text/brightscript" uri="libpkg:/components/PosterCard.brs" />
+</component>

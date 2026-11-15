@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="NavBar" extends="Group">
+    <interface>
+        <field id="items" type="array" onChange="build" />
+        <field id="selectedIndex" type="integer" value="0" onChange="refresh" />
+        <field id="active" type="boolean" value="false" onChange="refresh" />
+    </interface>
+    <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
+    <script type="text/brightscript" uri="libpkg:/components/NavBar.brs" />
+    <script type="text/brightscript" uri="pkg:/source/bslib.brs" />
+    <children>
+        <Group id="tabs" />
+    </children>
+</component>

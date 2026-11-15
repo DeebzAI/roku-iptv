@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="DetailsScreen" extends="Group">
+    <interface>
+        <field id="xtream" type="assocarray" />
+        <field id="userAgent" type="string" />
+        <field id="item" type="node" onChange="onItem" />
+        <field id="playRequest" type="assocarray" alwaysNotify="true" />
+    </interface>
+    <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
+    <script type="text/brightscript" uri="libpkg:/components/DetailsScreen.brs" />
+    <script type="text/brightscript" uri="pkg:/source/bslib.brs" />
+    <children>
+        <Rectangle width="1920" height="1080" color="0x0E1116FF" />
+        <Poster id="backdrop" translation="[520,0]" width="1400" height="788" loadDisplayMode="scaleToZoom" visible="false" />
+        <Poster id="poster" translation="[1440,120]" width="330" height="495" loadDisplayMode="scaleToFit" visible="false" />
+        <Poster width="1920" height="1080" uri="libpkg:/images/hero_fade.png" />
+        <Label id="title" translation="[100,130]" width="1200" height="80" color="0xFFFFFFFF" />
+        <Label id="meta" translation="[100,228]" width="1200" color="0xB8C0C8FF" />
+        <Label id="plot" translation="[100,285]" width="1050" height="200" wrap="true" maxLines="5" color="0xD0D6DCFF" />
+        <Group id="playBtn" translation="[100,540]" focusable="true">
+            <Poster id="playPill" uri="libpkg:/images/pill.9.png" width="280" height="80" />
+            <Label id="playLabel" width="280" height="80" horizAlign="center" vertAlign="center" text="Play" color="0x0E1116FF" />
+        </Group>
+        <LabelList id="seasons" translation="[100,540]" itemSize="[300,62]" numRows="7" visible="false" vertFocusAnimationStyle="floatingFocus" color="0xB8C0C8FF" focusedColor="0x0E1116FF" focusBitmapUri="libpkg:/images/pill.9.png" focusFootprintBitmapUri="libpkg:/images/card.9.png" />
+        <LabelList id="episodes" translation="[440,540]" itemSize="[1380,62]" numRows="7" visible="false" vertFocusAnimationStyle="floatingFocus" color="0xD0D6DCFF" focusedColor="0x0E1116FF" focusBitmapUri="libpkg:/images/pill.9.png" />
+        <Label id="status" translation="[100,560]" width="1200" color="0x8D97A3FF" />
+    </children>
+</component>
