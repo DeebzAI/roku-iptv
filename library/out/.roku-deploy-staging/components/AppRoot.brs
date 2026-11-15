@@ -65,7 +65,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...")
+    showMessage("Signing in...  (v7.1)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -172,12 +172,33 @@ end sub
 ' ---------- playback ----------
 
 sub startPlayback(url as String, title as String, fmt as String, isLive as Boolean)
+    ' Remember the request so a failed movie/episode can be retried differently.
+    m.playReq = { url: url, title: title, fmt: fmt, live: isLive }
+    m.attempt = 0
+    playAttempt()
+end sub
+
+function altFormat(fmt as String) as String
+    if fmt = "mkv" then return "mp4"
+    if fmt = "mp4" then return "mkv"
+    if fmt = "hls" then return "mp4"
+    return "mp4"
+end function
+
+sub playAttempt()
+    req = m.playReq
+    fmt = req.fmt
+    sendUa = true
+    ' attempt 0: as given  /  1: without the custom User-Agent  /  2: other container type
+    if m.attempt = 1 then sendUa = false
+    if m.attempt = 2 then fmt = altFormat(req.fmt)
     content = CreateObject("roSGNode", "ContentNode")
-    content.url = url
-    content.title = title
+    content.url = req.url
+    content.title = req.title
     content.streamFormat = fmt
-    content.live = isLive
-    if m.ua <> "" then content.HttpHeaders = ["User-Agent:" + m.ua]
+    content.live = req.live
+    if sendUa and m.ua <> "" then content.HttpHeaders = ["User-Agent:" + m.ua]
+    print "IPTV play attempt "; m.attempt; " fmt="; fmt; " ua="; sendUa; " url="; req.url
     m.video.control = "stop"
     m.video.content = content
     m.video.visible = true
@@ -211,18 +232,28 @@ sub stopVideo()
 end sub
 
 sub onVideoState()
-    if m.video.state = "error" then
-        msg = m.video.errorMsg
-        stopVideo()
-        toast("Couldn't play that: " + msg)
+    if m.video.state <> "error" then return
+    code = m.video.errorCode
+    msg = m.video.errorMsg
+    detail = ""
+    if m.video.errorStr <> invalid then detail = m.video.errorStr
+    print "IPTV playback error "; code; " "; msg; " | "; detail
+    if m.playReq <> invalid and not m.playReq.live and m.attempt < 2 then
+        m.attempt = m.attempt + 1
+        playAttempt()
+        return
     end if
+    stopVideo()
+    text = "Couldn't play that (error " + asStr(code) + "): " + msg
+    if detail <> "" then text = text + Chr(10) + detail
+    toast(text)
 end sub
 
 sub toast(text as String)
     m.status.text = text
     m.status.visible = true
     m.toastTimer = CreateObject("roSGNode", "Timer")
-    m.toastTimer.duration = 4
+    m.toastTimer.duration = 8
     m.toastTimer.observeField("fire", "hideToast")
     m.toastTimer.control = "start"
 end sub

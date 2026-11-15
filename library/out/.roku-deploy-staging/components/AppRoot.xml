@@ -12,7 +12,6 @@
         <Label id="status" translation="[0,500]" width="1920" horizAlign="center" wrap="true" color="0xFFFFFFFF" />
         <Video id="video" width="1920" height="1080" visible="false" />
         <Group id="osd" translation="[0,780]" visible="false">
-            <Poster width="1920" height="300" uri="libpkg:/images/hero_fade.png" opacity="0" />
             <Rectangle width="1920" height="300" color="0x0E1116D8" />
             <Label id="osdChannel" translation="[100,40]" width="1720" color="0xFFFFFFFF" />
             <Label id="osdNow" translation="[100,112]" width="1720" color="0xFFFFFFFF" />
