@@ -17,11 +17,12 @@ sub init()
     m.qualityRe = CreateObject("roRegex", "(^|\s|\(|\[)(SD|HD|FHD|UHD|4K|HEVC|H265|RAW|HQ|LQ|1080P?|720P?|60FPS|50FPS)(?=$|\s|\)|\])", "i")
     m.spacesRe = CreateObject("roRegex", "[\s\(\)\[\]]+", "")
     m.notEventCatRe = CreateObject("roRegex", "SPORT\+|FANDUEL|REPLAY|TEAMS|NETWORK", "i")
-    m.vsRe = CreateObject("roRegex", "\s(VS\.?|V\.?|@)\s", "i")
+    m.vsRe = CreateObject("roRegex", "\s(VS\.?|V\.?|AT)\s|\S\s?@\s?\S|\b(SNF|MNF|TNF)\b", "i")
     m.noEventRe = CreateObject("roRegex", "NO EVENT|NO GAME|OFF ?AIR|NO STREAM|STAND ?BY|COMING SOON", "i")
-    m.leaguePrefixRe = CreateObject("roRegex", "^([A-Z+]{2,10}\s*[|:\-]?\s*){0,3}\d{1,3}\s*[:|\-](?!\d)\s*", "")
+    m.leaguePrefixRe = CreateObject("roRegex", "^([A-Z+]{2,10}\s*[|:\-]?\s*){0,3}\d{1,3}[Kk]?\s*[:|\-](?!\d)\s*", "")
     m.isoRe = CreateObject("roRegex", "(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(:\d{2})?", "")
-    m.timeRe = CreateObject("roRegex", "(\d{1,2}):(\d{2})\s*([AP]\.?M\.?)?\s*(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT|UK|GMT|BST|UTC|CET|CEST)?", "i")
+    m.timeRe = CreateObject("roRegex", "(\d{1,2}):(\d{2})\s*([AP]\.?M\.?)?\s*\b(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT|UK|GMT|BST|UTC|CET|CEST)?\b", "i")
+    m.hourOnlyRe = CreateObject("roRegex", "(?<![\d:])(\d{1,2})\s*([AP])\.?M\.?(?![A-Z])\s*\b(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT|UK|GMT|BST|UTC|CET|CEST)?\b", "i")
     m.dateRe = CreateObject("roRegex", "\b(\d{1,2})[/.](\d{1,2})([/.]\d{2,4})?\b", "")
     m.monthNameRe = CreateObject("roRegex", "\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\.?\s+(\d{1,2})\b", "i")
     m.dayMonthNameRe = CreateObject("roRegex", "\b(\d{1,2})(ST|ND|RD|TH)?\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\b", "i")
@@ -111,30 +112,35 @@ sub doCategories(req as Object)
             idx = idx + 1
             if raw <> "" and not m.ukRe.IsMatch(raw) and not m.ieRe.IsMatch(raw) and not m.adultRe.IsMatch(raw) and not m.spanishCatRe.IsMatch(raw) then
                 sporty = m.sportsRe.IsMatch(raw)
+                isNetwork = m.localCatRe.IsMatch(raw)
+                if kind = "sports" and isNetwork then sporty = true
                 keep = true
                 if (kind = "sports" or kind = "later") and not sporty then keep = false
                 if kind = "live" and sporty then keep = false
                 if kind = "live" and m.junkLiveRe.IsMatch(raw) then keep = false
                 if keep then
                     cid = asStr(c.category_id)
-                    if kind = "live" and m.localCatRe.IsMatch(raw) then localIds.Push(cid)
-                    if (kind = "sports" or kind = "later") and not m.notEventCatRe.IsMatch(raw) then
+                    if (kind = "live" or kind = "sports") and isNetwork then localIds.Push(cid)
+                    if (kind = "sports" or kind = "later") and not isNetwork and not m.notEventCatRe.IsMatch(raw) then
                         eventIds.Push({ id: cid, league: leagueGroup(up) })
                     end if
                     rank = categoryRank(kind, up)
+                    if kind = "sports" and isNetwork then rank = networkRank(up)
                     if not m.usRe.IsMatch(raw) and rank >= 90 then rank = rank + 50
                     kept.Push({ id: cid, name: prettyName(raw), sortKey: rank * 10000 + idx })
                 end if
             end if
         end for
     end if
-    if kind = "live" and localIds.Count() > 0 then
+    if (kind = "live" or kind = "sports") and localIds.Count() > 0 then
         ids = ""
         for each i in localIds
             if ids <> "" then ids = ids + ","
             ids = ids + i
         end for
-        kept.Push({ id: "local:" + ids, name: "Boston Local", sortKey: 0 })
+        bostonKey = 0
+        if kind = "sports" then bostonKey = 3 * 10000 ' after Sports Channels / FanDuel
+        kept.Push({ id: "local:" + ids, name: "Boston Local", sortKey: bostonKey })
     end if
     if kind = "sports" and eventIds.Count() > 0 then
         ' tag each category: 0 = NFL/NBA/NHL/MLB, 1 = everything else
@@ -182,6 +188,15 @@ function leagueGroup(up as String) as Integer
     if Instr(1, up, "NCAAB") > 0 or Instr(1, up, "NCAAW") > 0 or Instr(1, up, "NJCAA") > 0 then return 5
     if Instr(1, up, "UFC") > 0 or Instr(1, up, "BOXING") > 0 or Instr(1, up, "FITE") > 0 then return 6
     if Instr(1, up, "MLS") > 0 or Instr(1, up, "SOCCER") > 0 then return 7
+    return 8
+end function
+
+' Network stations on the Sports tab: right after Sports Channels, FanDuel and Boston Local.
+function networkRank(up as String) as Integer
+    if Instr(1, up, "CBS") > 0 then return 4
+    if Instr(1, up, "FOX") > 0 then return 5
+    if Instr(1, up, "NBC") > 0 then return 6
+    if Instr(1, up, "ABC") > 0 then return 7
     return 8
 end function
 
@@ -475,6 +490,7 @@ function matchupText(name as String) as String
     t = m.leaguePrefixRe.Replace(name, "")
     t = m.isoRe.ReplaceAll(t, " ")
     t = m.timeRe.ReplaceAll(t, " ")
+    t = m.hourOnlyRe.ReplaceAll(t, " ")
     t = m.dateRe.ReplaceAll(t, " ")
     t = m.monthNameRe.ReplaceAll(t, " ")
     t = m.dayMonthNameRe.ReplaceAll(t, " ")
@@ -523,17 +539,23 @@ function parseEventTime(name as String, nowTs as Integer) as Integer
         if zm.Count() >= 2 then zone = UCase(zm[1])
     else
         tm = m.timeRe.Match(name)
-        if tm.Count() < 3 then return 0
-        hourText = tm[1]
-        h = hourText.ToInt()
-        mi = tm[2].ToInt()
+        hourText = ""
         ampm = ""
-        if tm.Count() > 3 then ampm = UCase(tm[3])
-        if tm.Count() > 4 then zone = UCase(tm[4])
-        if zone = "" then
-            zm = m.zoneRe.Match(name)
-            if zm.Count() >= 2 then zone = UCase(zm[1])
+        if tm.Count() >= 3 then
+            hourText = tm[1]
+            mi = tm[2].ToInt()
+            if tm.Count() > 3 then ampm = UCase(tm[3])
+            if tm.Count() > 4 then zone = UCase(tm[4])
+        else
+            ' "8pm" style (no minutes)
+            ho = m.hourOnlyRe.Match(name)
+            if ho.Count() < 3 then return 0
+            hourText = ho[1]
+            mi = 0
+            ampm = UCase(ho[2]) + "M"
+            if ho.Count() > 3 then zone = UCase(ho[3])
         end if
+        h = hourText.ToInt()
         europeZone = (zone = "UK" or zone = "GMT" or zone = "BST" or zone = "UTC" or zone = "CET" or zone = "CEST")
         if Left(ampm, 1) = "P" and h < 12 then h = h + 12
         if Left(ampm, 1) = "A" and h = 12 then h = 0
