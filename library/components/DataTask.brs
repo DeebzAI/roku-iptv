@@ -138,14 +138,15 @@ sub doCategories(req as Object)
     end if
     if kind = "sports" and eventIds.Count() > 0 then
         ' tag each category: 0 = NFL/NBA/NHL/MLB, 1 = everything else
+        ' only NFL / NBA / NHL / MLB categories feed Games On Now
         ids = ""
         for each e in eventIds
-            pri = 1
-            if e.league <= 3 then pri = 0
-            if ids <> "" then ids = ids + ","
-            ids = ids + e.id + "~" + pri.ToStr()
+            if e.league <= 3 then
+                if ids <> "" then ids = ids + ","
+                ids = ids + e.id + "~0"
+            end if
         end for
-        kept.Push({ id: "games:" + ids, name: "Games On Now", sortKey: 0 })
+        if ids <> "" then kept.Push({ id: "games:" + ids, name: "Games On Now", sortKey: 0 })
     end if
     if kind = "later" then
         groupNames = ["NFL", "NBA", "NHL", "MLB", "College Football", "College Basketball", "UFC & Boxing", "Soccer", "Other Sports"]
