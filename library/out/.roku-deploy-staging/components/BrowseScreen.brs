@@ -12,7 +12,7 @@ sub init()
     m.heroLogo = m.top.findNode("heroLogo")
     m.heroBar = m.top.findNode("heroBar")
     m.heroBarBg = m.top.findNode("heroBarBg")
-    m.heroTitle.font = makeFont(62, true)
+    m.heroTitle.font = makeFont(56, true)
     m.heroMeta.font = makeFont(28, false)
     m.heroDesc.font = makeFont(28, false)
     m.status.font = makeFont(32, false)
@@ -224,7 +224,10 @@ sub showHero(item as Object)
     if kind = "live" then
         queueArt("logo", item.HDPosterUrl)
         m.heroMeta.text = m.heroRowTitle
-        if item.Description <> invalid and item.Description <> "" then m.heroMeta.text = m.heroRowTitle + "   ·   " + item.Description
+        if item.cardType = "game" then
+            if item.team2 <> "" then m.heroTitle.text = item.team1 + "  " + item.sep + "  " + item.team2
+            m.heroMeta.text = joinParts([item.badge, item.league])
+        end if
         g = freshGuide(m.epgCache, item.id)
         if g <> invalid then showGuide(g) else m.heroDesc.text = ""
     else if kind = "movie" then
@@ -301,12 +304,7 @@ sub showGuide(g as Object)
     lines = guideLines(g)
     if g.items.Count() = 0 then
         ' no guide data: show the provider's full channel name instead (titles get cut off)
-        fullName = ""
-        if m.heroItem <> invalid then
-            fullName = m.heroItem.Description
-            if fullName = invalid or fullName = "" then fullName = m.heroItem.title
-        end if
-        m.heroDesc.text = fullName + Chr(10) + "No guide info for this channel"
+        m.heroDesc.text = ""
         return
     end if
     m.heroDesc.text = "Now:  " + lines.now + Chr(10) + lines.time + Chr(10) + lines.next

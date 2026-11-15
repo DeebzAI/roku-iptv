@@ -30,6 +30,15 @@ sub init()
     m.dayNameRe = CreateObject("roRegex", "\b(MON|TUE|TUES|WED|THU|THUR|THURS|FRI|SAT|SUN)(DAY)?\b\.?", "i")
     m.emptyParensRe = CreateObject("roRegex", "\(\s*\)|\[\s*\]", "")
     m.sdRe = CreateObject("roRegex", "(^|\s|\(|\[)SD($|\s|\)|\])", "i")
+    m.teamsPrefixRe = CreateObject("roRegex", "^(NFL|NBA|NHL|MLB|MLS|NCAAF|NCAAB|WNBA)\s+TEAMS\s*[|:\-]\s*", "i")
+    m.callSignRe = CreateObject("roRegex", "\s*\((W|K|C)[A-Z]{2,3}(-[A-Z0-9]+)?\)", "i")
+    m.networkLeadRe = CreateObject("roRegex", "^(CBS|FOX|NBC|ABC|ESPN|TNT)\s+(.+)$", "i")
+    m.qualityTailRe = CreateObject("roRegex", "\s+(SD|HD|FHD|UHD|HEVC|RAW)(?=\s|$)", "i")
+    m.lowerRe = CreateObject("roRegex", "[a-z]", "")
+    m.digitRe = CreateObject("roRegex", "\d", "")
+    m.punctRe = CreateObject("roRegex", "[^A-Z0-9+&]", "")
+    m.tagRe = CreateObject("roRegex", "^\s*(SNF|MNF|TNF|NBA ON TNT)\b[\s:\-|]*", "i")
+    m.splitRe = CreateObject("roRegex", "^(.*?)\s*(\bVS\.?|\bV\.?|@|\bAT)\s*(.+)$", "i")
 end sub
 
 sub execute()
@@ -150,7 +159,7 @@ sub doCategories(req as Object)
         for each e in eventIds
             if e.league <= 3 then
                 if ids <> "" then ids = ids + ","
-                ids = ids + e.id + "~0"
+                ids = ids + e.id + "~0~" + leagueLabel(e.league)
             end if
         end for
         if ids <> "" then kept.Push({ id: "games:" + ids, name: "Games On Now", sortKey: 0 })
@@ -163,7 +172,7 @@ sub doCategories(req as Object)
             for each e in eventIds
                 if e.league = g then
                     if ids <> "" then ids = ids + ","
-                    ids = ids + e.id
+                    ids = ids + e.id + "~1~" + leagueLabel(e.league)
                 end if
             end for
             if ids <> "" then out.Push({ id: "soon:" + ids, name: groupNames[g] })
@@ -178,6 +187,12 @@ sub doCategories(req as Object)
     end for
     m.top.result = { cats: out }
 end sub
+
+function leagueLabel(g as Integer) as String
+    labels = ["NFL", "NBA", "NHL", "MLB", "NCAAF", "NCAAB", "UFC", "SOCCER", "SPORTS"]
+    if g < 0 or g >= labels.Count() then return "SPORTS"
+    return labels[g]
+end function
 
 ' Which league bucket a sports category belongs to (index into the Later Today rows).
 function leagueGroup(up as String) as Integer
@@ -291,6 +306,56 @@ function cleanChannelName(raw as String) as String
     name = stripBoxPrefix(raw)
     if m.prefixRe.IsMatch(name) then name = m.prefixRe.Replace(name, "")
     return name.Trim()
+end function
+
+' What the card shows: "NFL TEAMS | CBS BEARS (WBBM) | CHICAGO" -> "Bears · CBS",
+' "NFL NETWORK HD" -> "NFL Network".
+function displayName(name as String) as String
+    n = name
+    if m.teamsPrefixRe.IsMatch(n) then
+        n = m.teamsPrefixRe.Replace(n, "")
+        n = m.callSignRe.ReplaceAll(n, "")
+        bar = Instr(1, n, "|")
+        if bar > 0 then n = Left(n, bar - 1)
+        n = n.Trim()
+        nw = m.networkLeadRe.Match(n)
+        if nw.Count() >= 3 then n = smartTitle(nw[2]) + " · " + UCase(nw[1])
+    end if
+    n = m.callSignRe.ReplaceAll(n, "")
+    n = m.qualityTailRe.ReplaceAll(n, "")
+    n = m.spacesRe.ReplaceAll(n, " ").Trim()
+    if n = "" then n = name
+    if not m.lowerRe.IsMatch(n) then n = smartTitle(n)
+    return n
+end function
+
+' Title-case an ALL CAPS name but keep acronyms (ESPN, NFL, HBO...) upper case.
+function smartTitle(s as String) as String
+    if m.acronyms = invalid then
+        m.acronyms = {}
+        for each a in "NFL NBA WNBA NHL MLB MILB MLS UFC WWE AEW PPV HD FHD UHD 4K ESPN ESPNU ESPN2 TNT TBS FS1 FS2 CNN HLN MSNBC CNBC HBO AMC FX FXX FXM USA TLC HGTV MTV BET CBS NBC ABC PBS CW NESN NBCSB ACC SEC BTN TV DAZN AXS IFC TMC OWN ION NFHS PGA LIV F1 NCAA NCAAF NCAAB NJCAA CBSSN NBATV MAX TCM SNF MNF TNF II III IV ET PT AM PM UK US".Tokenize(" ")
+            m.acronyms[a] = true
+        end for
+        m.smallWords = { THE: "the", AND: "and", OF: "of", ON: "on", IN: "in", AT: "at", FOR: "for", TO: "to", VS: "vs", "VS.": "vs" }
+    end if
+    out = ""
+    idx = 0
+    for each w in s.Tokenize(" ")
+        uw = UCase(w)
+        word = w
+        core = m.punctRe.ReplaceAll(uw, "")
+        if m.acronyms.DoesExist(core) or m.digitRe.IsMatch(uw) then
+            word = uw
+        else if idx > 0 and m.smallWords.DoesExist(uw) then
+            word = m.smallWords[uw]
+        else if Len(w) > 0 then
+            word = UCase(Left(w, 1)) + LCase(Mid(w, 2))
+        end if
+        if out <> "" then out = out + " "
+        out = out + word
+        idx = idx + 1
+    end for
+    return out
 end function
 
 ' Big national sports channels first (base names are uppercase, quality tags removed).
@@ -412,7 +477,8 @@ sub doItems(req as Object)
             st = e.st
             sid = asStr(st.stream_id)
             item = row.createChild("ContentNode")
-            item.title = e.name
+            item.title = displayName(e.name)
+            item.Description = e.name
             item.id = sid
             item.HDPosterUrl = asStr(st.stream_icon)
             item.addFields({ kind: "live", cardType: "tile", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls" })
@@ -435,6 +501,8 @@ sub doGamesRow(req as Object, idList as String, mode as String)
         oneId = bits[0]
         pri = 1
         if bits.Count() > 1 then pri = bits[1].ToInt()
+        league = ""
+        if bits.Count() > 2 then league = bits[2]
         part = getJson(apiUrl("get_live_streams") + "&category_id=" + oneId, m.top.userAgent)
         if type(part) = "roArray" then
             for each st in part
@@ -458,7 +526,7 @@ sub doGamesRow(req as Object, idList as String, mode as String)
                             seen[key] = true
                             order = ts
                             if mode = "live" and pri = 1 then order = ts + 100000000 ' big four leagues first
-                            games.Push({ st: st, name: name, matchup: matchup, ts: ts, state: state, sortKey: order })
+                            games.Push({ st: st, name: name, matchup: matchup, ts: ts, state: state, sortKey: order, league: league })
                         end if
                     end if
                 end if
@@ -474,12 +542,15 @@ sub doGamesRow(req as Object, idList as String, mode as String)
         sid = asStr(g.st.stream_id)
         label = "LIVE"
         if g.state = "soon" then label = fmtTime(g.ts)
+        teams = splitTeams(g.matchup)
+        lg = g.league
+        if teams.tag <> "" then lg = lg + "  " + teams.tag
         item = row.createChild("ContentNode")
-        item.title = label + "  ·  " + g.matchup
+        item.title = g.matchup
         item.id = sid
         item.HDPosterUrl = asStr(g.st.stream_icon)
         item.Description = g.name
-        item.addFields({ kind: "live", cardType: "tile", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls" })
+        item.addFields({ kind: "live", cardType: "game", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls", badge: label, league: lg, team1: teams.a, team2: teams.b, sep: teams.sep })
         count = count + 1
     end for
     m.top.node = row
@@ -507,6 +578,24 @@ function matchupText(name as String) as String
         t = Mid(t, 2).Trim()
     end while
     return t
+end function
+
+' "SNF Steelers @ Chargers" -> { a: "Steelers", sep: "@", b: "Chargers", tag: "SNF" }
+function splitTeams(matchup as String) as Object
+    t = matchup.Trim()
+    tag = ""
+    tm = m.tagRe.Match(t)
+    if tm.Count() >= 2 then
+        tag = UCase(tm[1])
+        t = m.tagRe.Replace(t, "").Trim()
+    end if
+    sp = m.splitRe.Match(t)
+    if sp.Count() >= 4 then
+        sep = LCase(sp[2])
+        if sep = "v" or sep = "v." or sep = "vs." then sep = "vs"
+        return { a: sp[1].Trim(), sep: sep, b: sp[3].Trim(), tag: tag }
+    end if
+    return { a: t, sep: "", b: "", tag: tag }
 end function
 
 function pad2(n as Integer) as String
