@@ -29,7 +29,7 @@ sub init()
     m.started = false
 
     m.heroTimer = CreateObject("roSGNode", "Timer")
-    m.heroTimer.duration = 0.45
+    m.heroTimer.duration = 0.4
     m.heroTimer.observeField("fire", "loadHeroDetails")
 
     m.rows.observeField("rowItemFocused", "onItemFocused")
@@ -99,7 +99,6 @@ sub onCategories()
     m.status.visible = false
     queueRow(0)
     queueRow(1)
-    queueRow(2)
 end sub
 
 ' ---------- lazy row loading ----------
@@ -116,7 +115,7 @@ sub queueRow(i as Integer)
 end sub
 
 sub pump()
-    while m.running < 3 and m.queue.Count() > 0
+    while m.running < 2 and m.queue.Count() > 0
         i = m.queue.Shift()
         row = m.rows.content.getChild(i)
         t = CreateObject("roSGNode", "DataTask")
@@ -169,7 +168,6 @@ sub onItemFocused()
     rf = m.rows.rowItemFocused
     if rf = invalid or rf.Count() < 2 then return
     queueRow(rf[0] + 1)
-    queueRow(rf[0] + 2)
     item = itemAt(rf[0], rf[1])
     if item = invalid then return
     m.heroItem = item
@@ -187,13 +185,11 @@ sub showHero(item as Object)
     if kind = invalid then
         m.heroMeta.text = ""
         m.heroDesc.text = ""
-        hideArt()
+        queueArt("none", "")
         return
     end if
     if kind = "live" then
-        hideArt()
-        m.heroLogo.uri = item.HDPosterUrl
-        m.heroLogo.visible = true
+        queueArt("logo", item.HDPosterUrl)
         m.heroMeta.text = m.heroRowTitle
         g = freshGuide(m.epgCache, item.id)
         if g <> invalid then showGuide(g) else m.heroDesc.text = ""
@@ -218,6 +214,35 @@ function ratingText(r as Dynamic) as String
     return "Rated " + r + "/10"
 end function
 
+' Artwork is applied only after the highlight settles (see loadHeroDetails).
+sub queueArt(kind as String, url as Dynamic)
+    if url = invalid then url = ""
+    m.artKind = kind
+    m.artUrl = url
+end sub
+
+sub applyArt()
+    if m.artKind = invalid then return
+    if m.artKind = "backdrop" and m.artUrl <> "" then
+        if m.heroBackdrop.uri <> m.artUrl then m.heroBackdrop.uri = m.artUrl
+        m.heroPoster.visible = false
+        m.heroLogo.visible = false
+        m.heroBackdrop.visible = true
+    else if m.artKind = "poster" and m.artUrl <> "" then
+        if m.heroPoster.uri <> m.artUrl then m.heroPoster.uri = m.artUrl
+        m.heroBackdrop.visible = false
+        m.heroLogo.visible = false
+        m.heroPoster.visible = true
+    else if m.artKind = "logo" and m.artUrl <> "" then
+        if m.heroLogo.uri <> m.artUrl then m.heroLogo.uri = m.artUrl
+        m.heroBackdrop.visible = false
+        m.heroPoster.visible = false
+        m.heroLogo.visible = true
+    else
+        hideArt()
+    end if
+end sub
+
 sub hideArt()
     m.heroBackdrop.visible = false
     m.heroPoster.visible = false
@@ -225,16 +250,11 @@ sub hideArt()
 end sub
 
 sub showBackdrop(url as String)
-    hideArt()
-    m.heroBackdrop.uri = url
-    m.heroBackdrop.visible = true
+    queueArt("backdrop", url)
 end sub
 
-sub showPosterArt(url as String)
-    hideArt()
-    if url = invalid or url = "" then return
-    m.heroPoster.uri = url
-    m.heroPoster.visible = true
+sub showPosterArt(url as Dynamic)
+    queueArt("poster", url)
 end sub
 
 sub applyInfo(item as Object, info as Object)
@@ -256,6 +276,7 @@ sub showGuide(g as Object)
 end sub
 
 sub loadHeroDetails()
+    applyArt()
     item = m.heroItem
     if item = invalid or item.kind = invalid then return
     if item.kind = "live" then
@@ -297,7 +318,10 @@ sub onVodInfo(event as Object)
     m.pendingInfo.Delete("vod" + r.id)
     m.tasks.Delete("vod" + r.id)
     m.infoCache[r.id] = r
-    if m.heroItem <> invalid and m.heroItem.kind = "movie" and m.heroItem.id = r.id then applyInfo(m.heroItem, r)
+    if m.heroItem <> invalid and m.heroItem.kind = "movie" and m.heroItem.id = r.id then
+        applyInfo(m.heroItem, r)
+        applyArt()
+    end if
 end sub
 
 ' ---------- selection ----------

@@ -109,7 +109,7 @@ sub doItems(req as Object)
     count = 0
     if type(data) = "roArray" then
         for each st in data
-            if count >= 300 then exit for
+            if count >= 150 then exit for
             name = asStr(st.name).Trim()
             if name <> "" and not m.ukRe.IsMatch(Left(name, 6)) then
                 item = row.createChild("ContentNode")

@@ -14,10 +14,9 @@
         <Group id="card">
             <Poster id="bg" uri="libpkg:/images/card.9.png" />
             <Label id="placeholder" horizAlign="center" vertAlign="center" wrap="true" color="0x8D97A3FF" />
-            <MaskGroup id="mask" maskUri="libpkg:/images/mask_poster.png" visible="false">
-                <Poster id="img" loadDisplayMode="scaleToFill" />
-            </MaskGroup>
-            <Poster id="logo" loadDisplayMode="scaleToFit" visible="false" />
+            <Poster id="img" loadDisplayMode="scaleToFill" loadWidth="230" loadHeight="345" visible="false" />
+            <Poster id="corners" uri="libpkg:/images/corners_poster.png" width="230" height="345" visible="false" />
+            <Poster id="logo" loadDisplayMode="scaleToFit" loadWidth="288" loadHeight="142" visible="false" />
             <Poster id="ring" uri="libpkg:/images/ring.9.png" opacity="0" />
         </Group>
         <Label id="title" color="0x8D97A3FF" />

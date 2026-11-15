@@ -2,7 +2,7 @@ sub init()
     m.card = m.top.findNode("card")
     m.bg = m.top.findNode("bg")
     m.placeholder = m.top.findNode("placeholder")
-    m.mask = m.top.findNode("mask")
+    m.corners = m.top.findNode("corners")
     m.img = m.top.findNode("img")
     m.logo = m.top.findNode("logo")
     m.ring = m.top.findNode("ring")
@@ -40,13 +40,14 @@ sub onContent()
     if url = invalid then url = ""
     if cardType = "poster" then
         m.logo.visible = false
-        m.mask.maskSize = [m.w, m.h]
         m.img.width = m.w
         m.img.height = m.h
         m.img.uri = url
-        m.mask.visible = (url <> "")
+        m.img.visible = (url <> "")
+        m.corners.visible = (url <> "")
     else
-        m.mask.visible = false
+        m.img.visible = false
+        m.corners.visible = false
         m.logo.translation = [36, 30]
         m.logo.width = m.w - 72
         m.logo.height = m.h - 60
