@@ -24,7 +24,8 @@ end sub
 sub loadPlaylist(url as String)
     m.status.text = "Loading playlist..."
     m.status.visible = true
-    m.task = CreateObject("roSGNode", "PlaylistTask")
+    m.task = CreateObject("roSGNode", "IPTVLib:PlaylistTask")
+    if m.task = invalid then m.task = CreateObject("roSGNode", "PlaylistTask")
     m.task.url = url
     m.task.observeField("done", "onPlaylistLoaded")
     m.task.observeField("progress", "onPlaylistProgress")
