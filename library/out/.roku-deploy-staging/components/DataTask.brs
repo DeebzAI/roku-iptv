@@ -118,6 +118,7 @@ sub doCategories(req as Object)
                 if (kind = "sports" or kind = "later") and not sporty then keep = false
                 if kind = "live" and sporty then keep = false
                 if kind = "live" and m.junkLiveRe.IsMatch(raw) then keep = false
+                if Instr(1, up, "FANDUEL") > 0 then keep = false ' regional networks: not used
                 if keep then
                     cid = asStr(c.category_id)
                     if (kind = "live" or kind = "sports") and isNetwork then localIds.Push(cid)

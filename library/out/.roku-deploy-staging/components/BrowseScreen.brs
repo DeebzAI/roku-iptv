@@ -300,7 +300,13 @@ end sub
 sub showGuide(g as Object)
     lines = guideLines(g)
     if g.items.Count() = 0 then
-        m.heroDesc.text = "No guide info for this channel"
+        ' no guide data: show the provider's full channel name instead (titles get cut off)
+        fullName = ""
+        if m.heroItem <> invalid then
+            fullName = m.heroItem.Description
+            if fullName = invalid or fullName = "" then fullName = m.heroItem.title
+        end if
+        m.heroDesc.text = fullName + Chr(10) + "No guide info for this channel"
         return
     end if
     m.heroDesc.text = "Now:  " + lines.now + Chr(10) + lines.time + Chr(10) + lines.next
