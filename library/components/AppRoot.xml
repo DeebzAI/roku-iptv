@@ -3,7 +3,7 @@
   <children>
     <Rectangle id="bg" width="1920" height="1080" color="0x101418FF" />
 
-    <Label id="header" translation="[80,50]" text="IPTV Player  v5"
+    <Label id="header" translation="[80,50]" text="IPTV Player  v5.1"
       font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
     <Label id="hint" translation="[80,115]"
       text="Left/Right: switch lists   OK: play   *: change playlist   In video: Up/Down changes channel"
@@ -27,5 +27,5 @@
     <Video id="video" width="1920" height="1080" visible="false" />
   </children>
 
-  <script type="text/brightscript" uri="AppRoot.brs" />
+  <script type="text/brightscript" uri="libpkg:/components/AppRoot.brs" />
 </component>
