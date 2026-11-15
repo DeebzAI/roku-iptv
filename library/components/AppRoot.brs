@@ -65,7 +65,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v7.2)")
+    showMessage("Signing in...  (v7.3)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -88,9 +88,16 @@ sub onLogin()
     end if
     m.ua = r.ua
     m.status.visible = false
+    lastErr = loadSetting("lastError")
     m.nav.visible = true
     switchTab(0)
     focusScreen()
+    if lastErr <> "" then
+        toast("Note for Claude - last error: " + lastErr)
+        sec = CreateObject("roRegistrySection", "IPTVPlayer")
+        sec.Delete("lastError")
+        sec.Flush()
+    end if
 end sub
 
 ' ---------- tabs ----------

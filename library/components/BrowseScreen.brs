@@ -80,6 +80,14 @@ sub configureRows()
 end sub
 
 sub onCategories()
+    try
+        onCategoriesImpl()
+    catch e
+        reportError("onCategories", e)
+    end try
+end sub
+
+sub onCategoriesImpl()
     r = m.catTask.result
     cats = r.cats
     if cats = invalid or cats.Count() = 0 then
@@ -130,6 +138,14 @@ sub pump()
 end sub
 
 sub onRowLoaded(event as Object)
+    try
+        onRowLoadedImpl(event)
+    catch e
+        reportError("onRowLoaded", e)
+    end try
+end sub
+
+sub onRowLoadedImpl(event as Object)
     t = event.getRoSGNode()
     r = event.getData()
     i = r.rowIndex
@@ -139,13 +155,15 @@ sub onRowLoaded(event as Object)
     m.loaded[key] = true
     m.tasks.Delete(key)
     root = m.rows.content
+    if root = invalid then return
     node = t.node
     old = root.getChild(i)
-    if node <> invalid and node.getChildCount() > 0 and old <> invalid then
-        node.title = old.title
-        node.id = old.id
-        root.replaceChild(node, i)
-    else if old <> invalid then
+    if old = invalid then return
+    if node <> invalid and node.getChildCount() > 0 then
+        kids = node.getChildren(-1, 0)
+        old.appendChildren(kids)
+        old.removeChildIndex(0) ' drop the "Loading..." placeholder
+    else
         ph = old.getChild(0)
         if ph <> invalid then ph.title = "Nothing here"
     end if
@@ -165,13 +183,24 @@ function itemAt(r as Integer, c as Integer) as Dynamic
 end function
 
 sub onItemFocused()
+    try
+        onItemFocusedImpl()
+    catch e
+        reportError("onItemFocused", e)
+    end try
+end sub
+
+sub onItemFocusedImpl()
     rf = m.rows.rowItemFocused
     if rf = invalid or rf.Count() < 2 then return
     queueRow(rf[0] + 1)
+    if rf[0] < 0 or rf[1] < 0 then return
     item = itemAt(rf[0], rf[1])
     if item = invalid then return
     m.heroItem = item
-    m.heroRowTitle = m.rows.content.getChild(rf[0]).title
+    rowNode = m.rows.content.getChild(rf[0])
+    m.heroRowTitle = ""
+    if rowNode <> invalid then m.heroRowTitle = rowNode.title
     showHero(item)
     m.heroTimer.control = "stop"
     m.heroTimer.control = "start"
@@ -276,6 +305,14 @@ sub showGuide(g as Object)
 end sub
 
 sub loadHeroDetails()
+    try
+        loadHeroDetailsImpl()
+    catch e
+        reportError("loadHeroDetails", e)
+    end try
+end sub
+
+sub loadHeroDetailsImpl()
     applyArt()
     item = m.heroItem
     if item = invalid or item.kind = invalid then return
@@ -305,6 +342,14 @@ sub loadHeroDetails()
 end sub
 
 sub onEpg(event as Object)
+    try
+        onEpgImpl(event)
+    catch e
+        reportError("onEpg", e)
+    end try
+end sub
+
+sub onEpgImpl(event as Object)
     r = event.getData()
     m.pendingInfo.Delete("epg" + r.streamId)
     m.tasks.Delete("epg" + r.streamId)
@@ -314,6 +359,14 @@ sub onEpg(event as Object)
 end sub
 
 sub onVodInfo(event as Object)
+    try
+        onVodInfoImpl(event)
+    catch e
+        reportError("onVodInfo", e)
+    end try
+end sub
+
+sub onVodInfoImpl(event as Object)
     r = event.getData()
     m.pendingInfo.Delete("vod" + r.id)
     m.tasks.Delete("vod" + r.id)
@@ -327,9 +380,29 @@ end sub
 ' ---------- selection ----------
 
 sub onItemSelected()
+    try
+        onItemSelectedImpl()
+    catch e
+        reportError("onItemSelected", e)
+    end try
+end sub
+
+sub onItemSelectedImpl()
     rs = m.rows.rowItemSelected
     if rs = invalid or rs.Count() < 2 then return
     item = itemAt(rs[0], rs[1])
     if item = invalid or item.kind = invalid then return
     m.top.selectedInfo = { item: item, row: m.rows.content.getChild(rs[0]), index: rs[1] }
+end sub
+
+sub reportError(where as String, e as Object)
+    msg = where + ": " + asStr(e.message)
+    if e.backtrace <> invalid and e.backtrace.Count() > 0 then
+        b = e.backtrace[e.backtrace.Count() - 1]
+        msg = msg + " (" + asStr(b.filename) + " line " + asStr(b.line_number) + ")"
+    end if
+    print "IPTV error: "; msg
+    sec = CreateObject("roRegistrySection", "IPTVPlayer")
+    sec.Write("lastError", msg)
+    sec.Flush()
 end sub
