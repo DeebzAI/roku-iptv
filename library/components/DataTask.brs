@@ -139,6 +139,7 @@ function categoryRank(kind as String, up as String) as Integer
                 exit for
             end if
         end for
+        if not inSeason(up) then r = r + 40
         if Instr(1, up, "REPLAY") > 0 then r = r + 100
     else if kind = "live" then
         rules = [["24/7", 50], ["OD REALITY", 45], ["OD ", 60], ["NEWS", 10], ["ENTERTAINMENT", 20], ["HBO", 31], ["SHOWTIME", 32], ["STARZ", 33], ["MOVIES", 30], ["DOCU", 40], ["REALITY", 45], ["OD ", 60], ["SPECTRUM", 70], ["ABC NETWORK", 80], ["CBS NETWORK", 81], ["FOX NETWORK", 82], ["NBC NETWORK", 83], ["PBS", 84], ["CW", 85], ["HALLMARK", 95], ["MUSIC", 96]]
@@ -150,6 +151,23 @@ function categoryRank(kind as String, up as String) as Integer
         end for
     end if
     return r
+end function
+
+' Rough league seasons by month (1-12). Leagues not listed are treated as in season.
+function inSeason(up as String) as Boolean
+    dt = CreateObject("roDateTime")
+    dt.ToLocalTime()
+    mo = dt.GetMonth()
+    seasons = [["WNBA", [5, 6, 7, 8, 9, 10]], ["NCAAF", [8, 9, 10, 11, 12, 1]], ["NFL", [8, 9, 10, 11, 12, 1, 2]], ["NCAAW", [11, 12, 1, 2, 3, 4]], ["NCAAB", [11, 12, 1, 2, 3, 4]], ["NJCAA", [11, 12, 1, 2, 3, 4]], ["NBA", [10, 11, 12, 1, 2, 3, 4, 5, 6]], ["NHL", [10, 11, 12, 1, 2, 3, 4, 5, 6]], ["MILB", [4, 5, 6, 7, 8, 9]], ["MLB", [2, 3, 4, 5, 6, 7, 8, 9, 10]], ["COLLEGE BASEBALL", [2, 3, 4, 5, 6]], ["SOFTBALL", [2, 3, 4, 5, 6]], ["MLS", [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]]]
+    for each sea in seasons
+        if Instr(1, up, sea[0]) > 0 then
+            for each mth in sea[1]
+                if mth = mo then return true
+            end for
+            return false
+        end if
+    end for
+    return true
 end function
 
 ' "┃USA┃ DOCU | LIFESTYLE" -> "Docs & Lifestyle"
@@ -200,6 +218,21 @@ function cleanChannelName(raw as String) as String
     name = stripBoxPrefix(raw)
     if m.prefixRe.IsMatch(name) then name = m.prefixRe.Replace(name, "")
     return name.Trim()
+end function
+
+' Big national sports channels first (base names are uppercase, quality tags removed).
+function channelPriority(base as String) as Integer
+    if m.priorityRes = invalid then
+        pats = ["^ESPN$", "REDZONE", "^ESPN ?2$", "^(FS1|FOX SPORTS 1)$", "^NFL NETWORK", "^TNT( SPORTS)?$", "^TBS$", "^NBA ?TV$", "^NHL NETWORK", "^NESN", "NBC SPORTS BOSTON|^NBCSB", "^MLB NETWORK", "^CBS SPORTS", "^ESPNU$", "^SEC NETWORK", "^(BIG TEN|BTN)", "^ACC NETWORK", "^ESPN ?N?EWS", "^(FS2|FOX SPORTS 2)$", "^GOLF", "^TENNIS CHANNEL"]
+        m.priorityRes = []
+        for each p in pats
+            m.priorityRes.Push(CreateObject("roRegex", p, "i"))
+        end for
+    end if
+    for i = 0 to m.priorityRes.Count() - 1
+        if m.priorityRes[i].IsMatch(base) then return i + 1
+    end for
+    return 99
 end function
 
 function baseChannelName(name as String) as String
@@ -282,6 +315,15 @@ sub doItems(req as Object)
             entries.Push({ st: st, name: name, base: base, sd: isSD })
         end if
     end for
+
+    if kind = "sports" then
+        n = 0
+        for each e in entries
+            n = n + 1
+            e.sortKey = channelPriority(e.base) * 100000 + n
+        end for
+        entries.SortBy("sortKey")
+    end if
 
     for each e in entries
         if count >= 300 then exit for
