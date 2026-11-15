@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="AppRoot" extends="Group">
+  <children>
+    <Rectangle id="bg" width="1920" height="1080" color="0x101418FF" />
+
+    <Label id="header" translation="[80,50]" text="IPTV Player  v5"
+      font="font:LargeBoldSystemFont" color="0xFFFFFFFF" />
+    <Label id="hint" translation="[80,115]"
+      text="Left/Right: switch lists   OK: play   *: change playlist   In video: Up/Down changes channel"
+      font="font:SmallestSystemFont" color="0x8899AAFF" />
+
+    <Rectangle id="divider" translation="[610,180]" width="2" height="840" color="0x2A3440FF" />
+
+    <LabelList id="groupList" translation="[80,180]"
+      itemSize="[500,60]" numRows="14"
+      vertFocusAnimationStyle="floatingFocus"
+      color="0xC0C8D0FF" focusedColor="0x101418FF" />
+
+    <LabelList id="channelList" translation="[650,180]"
+      itemSize="[1190,60]" numRows="14"
+      vertFocusAnimationStyle="floatingFocus"
+      color="0xC0C8D0FF" focusedColor="0x101418FF" />
+
+    <Label id="status" translation="[0,500]" width="1920" horizAlign="center"
+      wrap="true" font="font:MediumSystemFont" color="0xFFFFFFFF" />
+
+    <Video id="video" width="1920" height="1080" visible="false" />
+  </children>
+
+  <script type="text/brightscript" uri="AppRoot.brs" />
+</component>
