@@ -5,6 +5,19 @@ sub init()
     m.video = m.top.findNode("video")
     m.groups = invalid
     m.currentIndex = 0
+    m.xtream = invalid
+    m.epgCache = {}
+    m.guide = m.top.findNode("guide")
+    m.osd = m.top.findNode("osd")
+
+    ' Wait briefly after the highlight moves before asking for guide data.
+    m.guideTimer = CreateObject("roSGNode", "Timer")
+    m.guideTimer.duration = 0.35
+    m.guideTimer.observeField("fire", "requestGuideForFocused")
+    m.osdTimer = CreateObject("roSGNode", "Timer")
+    m.osdTimer.duration = 6
+    m.osdTimer.observeField("fire", "hideOsd")
+    m.channelList.observeField("itemFocused", "onChannelFocused")
 
     m.groupList.observeField("itemFocused", "onGroupFocused")
     m.groupList.observeField("itemSelected", "onGroupSelected")
@@ -46,6 +59,8 @@ sub onPlaylistLoaded()
 
     m.groups = m.task.result
     m.userAgent = m.task.userAgent
+    m.xtream = m.task.xtream
+    if m.xtream <> invalid and m.xtream.base = invalid then m.xtream = invalid
     groupContent = CreateObject("roSGNode", "ContentNode")
     for i = 0 to m.groups.getChildCount() - 1
         g = m.groups.getChild(i)
@@ -99,11 +114,13 @@ sub playChannel(index as Integer)
     m.video.setFocus(true)
     m.video.control = "play"
     m.channelList.jumpToItem = index
+    showOsd(ch)
 end sub
 
 sub stopVideo()
     m.video.control = "stop"
     m.video.visible = false
+    hideOsd()
     m.channelList.setFocus(true)
 end sub
 
@@ -201,3 +218,146 @@ sub saveSetting(key as String, value as String)
     sec.Write(key, value)
     sec.Flush()
 end sub
+
+' ---------- TV guide (now / next) ----------
+
+sub onChannelFocused()
+    m.guideTimer.control = "stop"
+    if m.xtream = invalid then return
+    m.guideTimer.control = "start"
+end sub
+
+sub requestGuideForFocused()
+    group = m.channelList.content
+    if group = invalid then return
+    ch = group.getChild(m.channelList.itemFocused)
+    if ch = invalid then return
+    m.guideChannelId = ch.id
+    cached = cachedGuide(ch.id)
+    if cached <> invalid then
+        renderGuide(cached)
+    else
+        m.top.findNode("guideNow").text = "Loading guide..."
+        m.top.findNode("guideTime").text = ""
+        m.top.findNode("guideNext").text = ""
+        m.top.findNode("guideBar").width = 0
+        m.guide.visible = true
+        fetchGuide(ch.id)
+    end if
+end sub
+
+function cachedGuide(sid as String) as Dynamic
+    e = m.epgCache[sid]
+    if e = invalid then return invalid
+    now = CreateObject("roDateTime").AsSeconds()
+    ' Refetch after 10 minutes or once the current show has ended.
+    if now - e.fetched > 600 then return invalid
+    if e.items.Count() > 0 and e.items[0].stop <= now then return invalid
+    return e
+end function
+
+sub fetchGuide(sid as String)
+    if sid = "" then return
+    if m.pending = invalid then m.pending = {}
+    if m.pending[sid] <> invalid then return
+    t = CreateObject("roSGNode", "IPTVLib:EpgTask")
+    if t = invalid then t = CreateObject("roSGNode", "EpgTask")
+    if t = invalid then return
+    t.xtream = m.xtream
+    t.streamId = sid
+    t.userAgent = m.userAgent
+    t.observeField("result", "onGuideResult")
+    m.pending[sid] = t ' keep a reference so it isn't freed
+    t.control = "RUN"
+end sub
+
+sub onGuideResult(event as Object)
+    r = event.getData()
+    if r = invalid then return
+    if m.pending <> invalid then m.pending.Delete(r.streamId)
+    now = CreateObject("roDateTime").AsSeconds()
+    items = []
+    for each it in r.items
+        if it.stop > now then items.Push(it)
+    end for
+    entry = { fetched: now, items: items }
+    m.epgCache[r.streamId] = entry
+    if r.streamId = m.guideChannelId then renderGuide(entry)
+    if m.osd.visible and r.streamId = m.osdChannelId then renderOsd(entry)
+end sub
+
+sub renderGuide(entry as Object)
+    info = guideLines(entry)
+    m.top.findNode("guideNow").text = info.now
+    m.top.findNode("guideTime").text = info.time
+    m.top.findNode("guideNext").text = info.next
+    m.top.findNode("guideBar").width = Int(400 * info.progress)
+    m.guide.visible = true
+end sub
+
+sub showOsd(ch as Object)
+    m.osdChannelId = ch.id
+    m.top.findNode("osdChannel").text = ch.title
+    m.top.findNode("osdNow").text = ""
+    m.top.findNode("osdTime").text = ""
+    m.top.findNode("osdNext").text = ""
+    m.top.findNode("osdBar").width = 0
+    m.osd.visible = true
+    m.osdTimer.control = "stop"
+    m.osdTimer.control = "start"
+    if m.xtream = invalid then return
+    cached = cachedGuide(ch.id)
+    if cached <> invalid then
+        renderOsd(cached)
+    else
+        m.top.findNode("osdNow").text = "Loading guide..."
+        fetchGuide(ch.id)
+    end if
+end sub
+
+sub renderOsd(entry as Object)
+    info = guideLines(entry)
+    m.top.findNode("osdNow").text = info.now
+    m.top.findNode("osdTime").text = info.time
+    m.top.findNode("osdNext").text = info.next
+    m.top.findNode("osdBar").width = Int(600 * info.progress)
+end sub
+
+sub hideOsd()
+    m.osd.visible = false
+end sub
+
+function guideLines(entry as Object) as Object
+    out = { now: "No guide info for this channel", time: "", next: "", progress: 0 }
+    items = entry.items
+    if items = invalid or items.Count() = 0 then return out
+    cur = items[0]
+    nowTs = CreateObject("roDateTime").AsSeconds()
+    out.now = "Now: " + cur.title
+    out.time = fmtTime(cur.start) + " - " + fmtTime(cur.stop)
+    minsLeft = Int((cur.stop - nowTs) / 60)
+    if minsLeft >= 0 then out.time = out.time + "   (" + minsLeft.ToStr() + " min left)"
+    if cur.stop > cur.start then
+        p = (nowTs - cur.start) / (cur.stop - cur.start)
+        if p < 0 then p = 0
+        if p > 1 then p = 1
+        out.progress = p
+    end if
+    if items.Count() > 1 then out.next = "Next: " + fmtTime(items[1].start) + "  " + items[1].title
+    return out
+end function
+
+function fmtTime(ts as Integer) as String
+    dt = CreateObject("roDateTime")
+    dt.FromSeconds(ts)
+    dt.ToLocalTime()
+    h = dt.GetHours()
+    mins = dt.GetMinutes()
+    suffix = "AM"
+    if h >= 12 then suffix = "PM"
+    h = h MOD 12
+    if h = 0 then h = 12
+    mm = mins.ToStr()
+    if mins < 10 then mm = "0" + mm
+    return h.ToStr() + ":" + mm + " " + suffix
+end function

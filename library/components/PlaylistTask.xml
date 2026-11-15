@@ -6,6 +6,7 @@
     <field id="error" type="string" />
     <field id="progress" type="string" />
     <field id="userAgent" type="string" />
+    <field id="xtream" type="assocarray" />
     <field id="done" type="boolean" alwaysNotify="true" />
   </interface>
   <script type="text/brightscript" uri="libpkg:/components/PlaylistTask.brs" />

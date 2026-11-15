@@ -23,6 +23,7 @@ sub loadPlaylistTask()
             root = loadXtream(creds, ua)
             if root <> invalid and root.getChildCount() > 0 then
                 m.top.userAgent = ua
+                m.top.xtream = creds
                 m.top.result = root
                 m.top.error = ""
                 m.top.done = true
@@ -137,6 +138,7 @@ function loadXtream(c as Object, ua as String) as Dynamic
                 ch = g.createChild("ContentNode")
                 ch.title = asStr(st.name)
                 ch.HDPosterUrl = asStr(st.stream_icon)
+                ch.id = asStr(st.stream_id)
                 ch.url = c.base + "/live/" + c.user + "/" + c.pass + "/" + asStr(st.stream_id) + ".m3u8"
                 ch.streamFormat = "hls"
             end for

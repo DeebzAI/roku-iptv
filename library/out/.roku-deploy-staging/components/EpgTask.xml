@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="EpgTask" extends="Task">
+    <interface>
+        <field id="xtream" type="assocarray" />
+        <field id="streamId" type="string" />
+        <field id="userAgent" type="string" />
+        <field id="result" type="assocarray" />
+    </interface>
+    <script type="text/brightscript" uri="libpkg:/components/EpgTask.brs" />
+    <script type="text/brightscript" uri="pkg:/source/bslib.brs" />
+</component>
