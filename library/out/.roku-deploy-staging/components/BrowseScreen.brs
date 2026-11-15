@@ -165,7 +165,11 @@ sub onRowLoadedImpl(event as Object)
         old.removeChildIndex(0) ' drop the "Loading..." placeholder
     else
         ph = old.getChild(0)
-        if ph <> invalid then ph.title = "Nothing here"
+        if ph <> invalid then
+            ph.title = "Nothing here"
+            if m.top.kind = "later" then ph.title = "No more games today"
+            if Left(old.id, 6) = "games:" then ph.title = "No games on right now"
+        end if
     end if
     pump()
     rf = m.rows.rowItemFocused

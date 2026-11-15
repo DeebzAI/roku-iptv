@@ -112,13 +112,15 @@ sub doCategories(req as Object)
             if raw <> "" and not m.ukRe.IsMatch(raw) and not m.ieRe.IsMatch(raw) and not m.adultRe.IsMatch(raw) and not m.spanishCatRe.IsMatch(raw) then
                 sporty = m.sportsRe.IsMatch(raw)
                 keep = true
-                if kind = "sports" and not sporty then keep = false
+                if (kind = "sports" or kind = "later") and not sporty then keep = false
                 if kind = "live" and sporty then keep = false
                 if kind = "live" and m.junkLiveRe.IsMatch(raw) then keep = false
                 if keep then
                     cid = asStr(c.category_id)
                     if kind = "live" and m.localCatRe.IsMatch(raw) then localIds.Push(cid)
-                    if kind = "sports" and not m.notEventCatRe.IsMatch(raw) then eventIds.Push(cid)
+                    if (kind = "sports" or kind = "later") and not m.notEventCatRe.IsMatch(raw) then
+                        eventIds.Push({ id: cid, league: leagueGroup(up) })
+                    end if
                     rank = categoryRank(kind, up)
                     if not m.usRe.IsMatch(raw) and rank >= 90 then rank = rank + 50
                     kept.Push({ id: cid, name: prettyName(raw), sortKey: rank * 10000 + idx })
@@ -135,12 +137,31 @@ sub doCategories(req as Object)
         kept.Push({ id: "local:" + ids, name: "Boston Local", sortKey: 0 })
     end if
     if kind = "sports" and eventIds.Count() > 0 then
+        ' tag each category: 0 = NFL/NBA/NHL/MLB, 1 = everything else
         ids = ""
-        for each i in eventIds
+        for each e in eventIds
+            pri = 1
+            if e.league <= 3 then pri = 0
             if ids <> "" then ids = ids + ","
-            ids = ids + i
+            ids = ids + e.id + "~" + pri.ToStr()
         end for
         kept.Push({ id: "games:" + ids, name: "Games On Now", sortKey: 0 })
+    end if
+    if kind = "later" then
+        groupNames = ["NFL", "NBA", "NHL", "MLB", "College Football", "College Basketball", "UFC & Boxing", "Soccer", "Other Sports"]
+        out = []
+        for g = 0 to groupNames.Count() - 1
+            ids = ""
+            for each e in eventIds
+                if e.league = g then
+                    if ids <> "" then ids = ids + ","
+                    ids = ids + e.id
+                end if
+            end for
+            if ids <> "" then out.Push({ id: "soon:" + ids, name: groupNames[g] })
+        end for
+        m.top.result = { cats: out }
+        return
     end if
     kept.SortBy("sortKey")
     out = []
@@ -149,6 +170,19 @@ sub doCategories(req as Object)
     end for
     m.top.result = { cats: out }
 end sub
+
+' Which league bucket a sports category belongs to (index into the Later Today rows).
+function leagueGroup(up as String) as Integer
+    if Instr(1, up, "NFL") > 0 then return 0
+    if Instr(1, up, "NBA") > 0 and Instr(1, up, "WNBA") = 0 then return 1
+    if Instr(1, up, "NHL") > 0 then return 2
+    if Instr(1, up, "MLB") > 0 and Instr(1, up, "MILB") = 0 then return 3
+    if Instr(1, up, "NCAAF") > 0 then return 4
+    if Instr(1, up, "NCAAB") > 0 or Instr(1, up, "NCAAW") > 0 or Instr(1, up, "NJCAA") > 0 then return 5
+    if Instr(1, up, "UFC") > 0 or Instr(1, up, "BOXING") > 0 or Instr(1, up, "FITE") > 0 then return 6
+    if Instr(1, up, "MLS") > 0 or Instr(1, up, "SOCCER") > 0 then return 7
+    return 8
+end function
 
 ' Lower rank = higher up the screen.
 function categoryRank(kind as String, up as String) as Integer
@@ -309,7 +343,11 @@ sub doItems(req as Object)
     ' ----- live / sports channels -----
     catId = req.categoryId
     if Left(catId, 6) = "games:" then
-        doGamesRow(req, Mid(catId, 7))
+        doGamesRow(req, Mid(catId, 7), "live")
+        return
+    end if
+    if Left(catId, 5) = "soon:" then
+        doGamesRow(req, Mid(catId, 6), "soon")
         return
     end if
     streams = []
@@ -370,12 +408,16 @@ end sub
 
 ' ---------- Games On Now ----------
 
-sub doGamesRow(req as Object, idList as String)
+sub doGamesRow(req as Object, idList as String, mode as String)
     c = m.top.xtream
     nowTs = CreateObject("roDateTime").AsSeconds()
     games = []
     seen = {}
-    for each oneId in idList.Tokenize(",")
+    for each token in idList.Tokenize(",")
+        bits = token.Tokenize("~")
+        oneId = bits[0]
+        pri = 1
+        if bits.Count() > 1 then pri = bits[1].ToInt()
         part = getJson(apiUrl("get_live_streams") + "&category_id=" + oneId, m.top.userAgent)
         if type(part) = "roArray" then
             for each st in part
@@ -391,14 +433,14 @@ sub doGamesRow(req as Object, idList as String)
                     else if ts > nowTs and ts - nowTs < 12 * 3600 then
                         state = "soon"
                     end if
+                    if state <> mode then state = ""
                     if state <> "" then
                         matchup = matchupText(name)
                         key = UCase(matchup)
                         if matchup <> "" and not seen.DoesExist(key) then
                             seen[key] = true
                             order = ts
-                            if state = "on" then order = nowTs
-                            if state = "soon" then order = order + 1000000000
+                            if mode = "live" and pri = 1 then order = ts + 100000000 ' big four leagues first
                             games.Push({ st: st, name: name, matchup: matchup, ts: ts, state: state, sortKey: order })
                         end if
                     end if

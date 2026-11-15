@@ -15,9 +15,9 @@ sub init()
     m.top.findNode("osdTime").font = makeFont(26, false)
     m.top.findNode("osdNext").font = makeFont(26, false)
 
-    m.tabNames = ["Sports", "Live TV", "Movies", "TV Shows"]
-    m.tabKinds = ["sports", "live", "movies", "series"]
-    m.screens = [invalid, invalid, invalid, invalid]
+    m.tabNames = ["Sports", "Later Today", "Live TV", "Movies", "TV Shows"]
+    m.tabKinds = ["sports", "later", "live", "movies", "series"]
+    m.screens = [invalid, invalid, invalid, invalid, invalid]
     m.current = 0
     m.details = invalid
     m.epgCache = {}
@@ -61,14 +61,14 @@ sub startWithUrl(url as String)
     for each s in m.screens
         if s <> invalid then m.screensHost.removeChild(s)
     end for
-    m.screens = [invalid, invalid, invalid, invalid]
+    m.screens = [invalid, invalid, invalid, invalid, invalid]
     m.nav.visible = false
     m.xtream = parseXtream(url)
     if m.xtream = invalid then
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v7.8)")
+    showMessage("Signing in...  (v7.9)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
