@@ -148,3 +148,47 @@ function fmtClock(secs as Integer) as String
     end if
     return mi.ToStr() + ":" + ss
 end function
+
+' ---------- favorites ("Your Channels") ----------
+
+function loadFavs() as Object
+    sec = CreateObject("roRegistrySection", "IPTVPlayer")
+    if sec.Exists("favs") then
+        a = ParseJson(sec.Read("favs"))
+        if type(a) = "roArray" then return a
+    end if
+    return []
+end function
+
+function isFav(id as String) as Boolean
+    for each f in loadFavs()
+        if f.id = id then return true
+    end for
+    return false
+end function
+
+' Adds or removes a channel. Returns true if it was added.
+function toggleFav(item as Object) as Boolean
+    favs = loadFavs()
+    kept = []
+    removed = false
+    for each f in favs
+        if f.id = item.id then
+            removed = true
+        else
+            kept.Push(f)
+        end if
+    end for
+    if not removed then
+        logo = item.HDPosterUrl
+        if logo = invalid then logo = ""
+        kept.Unshift({ id: item.id, title: item.title, logo: logo, url: item.url })
+        while kept.Count() > 30
+            kept.Pop()
+        end while
+    end if
+    sec = CreateObject("roRegistrySection", "IPTVPlayer")
+    sec.Write("favs", FormatJson(kept))
+    sec.Flush()
+    return not removed
+end function

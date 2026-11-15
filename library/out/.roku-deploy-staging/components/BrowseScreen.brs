@@ -99,14 +99,74 @@ sub onCategoriesImpl()
         row = root.createChild("ContentNode")
         row.title = c.name
         row.id = c.id
-        ph = row.createChild("ContentNode")
-        ph.title = "Loading..."
-        ph.addFields({ cardType: m.cardType })
+        addSkeletons(row)
     end for
+    if m.top.kind = "sports" then
+        favRow = CreateObject("roSGNode", "ContentNode")
+        favRow.title = "Your Channels"
+        favRow.id = "favs"
+        insertAt = 1
+        if root.getChildCount() < 1 then insertAt = 0
+        root.insertChild(favRow, insertAt)
+        m.favIndex = insertAt
+        fillFavs(favRow)
+        m.loaded[insertAt.ToStr()] = true
+    end if
     m.rows.content = root
     m.status.visible = false
+    ' keep live game rows fresh
+    m.refreshTimer = CreateObject("roSGNode", "Timer")
+    m.refreshTimer.duration = 300
+    m.refreshTimer.repeat = true
+    m.refreshTimer.observeField("fire", "refreshGameRows")
+    m.refreshTimer.control = "start"
     queueRow(0)
     queueRow(1)
+end sub
+
+sub addSkeletons(row as Object)
+    for i = 1 to 6
+        sk = row.createChild("ContentNode")
+        sk.title = ""
+        sk.addFields({ cardType: m.cardType, skeleton: true })
+    end for
+end sub
+
+' ---------- favorites row (Sports) ----------
+
+sub fillFavs(row as Object)
+    row.removeChildrenIndex(row.getChildCount(), 0)
+    favs = loadFavs()
+    if favs.Count() = 0 then
+        hint = row.createChild("ContentNode")
+        hint.title = "Press * on any channel to add it here"
+        hint.addFields({ cardType: "tile", hint: true })
+        return
+    end if
+    for each f in favs
+        it = row.createChild("ContentNode")
+        it.title = f.title
+        it.id = f.id
+        it.HDPosterUrl = f.logo
+        it.addFields({ kind: "live", cardType: "tile", url: f.url, fmt: "hls" })
+    end for
+end sub
+
+sub onRefreshFavs()
+    if m.favIndex = invalid or m.rows.content = invalid then return
+    row = m.rows.content.getChild(m.favIndex)
+    if row <> invalid then fillFavs(row)
+end sub
+
+sub refreshGameRows()
+    if not m.top.visible or m.rows.content = invalid then return
+    for i = 0 to m.rows.content.getChildCount() - 1
+        r = m.rows.content.getChild(i)
+        if r <> invalid and r.id <> invalid and (Left(r.id, 6) = "games:" or Left(r.id, 5) = "soon:") then
+            m.loaded.Delete(i.ToStr())
+            queueRow(i)
+        end if
+    end for
 end sub
 
 ' ---------- lazy row loading ----------
@@ -159,17 +219,18 @@ sub onRowLoadedImpl(event as Object)
     node = t.node
     old = root.getChild(i)
     if old = invalid then return
+    oldCount = old.getChildCount()
     if node <> invalid and node.getChildCount() > 0 then
         kids = node.getChildren(-1, 0)
         old.appendChildren(kids)
-        old.removeChildIndex(0) ' drop the "Loading..." placeholder
+        old.removeChildrenIndex(oldCount, 0) ' drop the placeholders / previous list
     else
-        ph = old.getChild(0)
-        if ph <> invalid then
-            ph.title = "Nothing here"
-            if m.top.kind = "later" then ph.title = "No more games today"
-            if Left(old.id, 6) = "games:" then ph.title = "No games on right now"
-        end if
+        old.removeChildrenIndex(oldCount, 0)
+        msg = old.createChild("ContentNode")
+        msg.title = "Nothing here right now"
+        if m.top.kind = "later" then msg.title = "No more games today"
+        if Left(old.id, 6) = "games:" then msg.title = "No games on right now"
+        msg.addFields({ cardType: "tile", hint: true })
     end if
     pump()
     rf = m.rows.rowItemFocused
@@ -202,6 +263,7 @@ sub onItemFocusedImpl()
     item = itemAt(rf[0], rf[1])
     if item = invalid then return
     m.heroItem = item
+    m.top.focusedItem = item
     rowNode = m.rows.content.getChild(rf[0])
     m.heroRowTitle = ""
     if rowNode <> invalid then m.heroRowTitle = rowNode.title
@@ -216,6 +278,7 @@ sub showHero(item as Object)
     m.heroBar.visible = false
     m.heroBarBg.visible = false
     if kind = invalid then
+        if item.skeleton = true then m.heroTitle.text = ""
         m.heroMeta.text = ""
         m.heroDesc.text = ""
         queueArt("none", "")

@@ -10,10 +10,24 @@ sub init()
     m.clock = m.top.findNode("clock")
     m.status.font = makeFont(34, false)
     m.clock.font = makeFont(30, false)
-    m.top.findNode("osdChannel").font = makeFont(48, true)
+    m.top.findNode("osdChannel").font = makeFont(54, true)
     m.top.findNode("osdNow").font = makeFont(32, false)
     m.top.findNode("osdTime").font = makeFont(26, false)
     m.top.findNode("osdNext").font = makeFont(26, false)
+    m.top.findNode("osdLiveText").font = makeFont(26, true)
+    m.top.findNode("osdTag").font = makeFont(26, true)
+    m.top.findNode("stripTitle").font = makeFont(32, true)
+    m.strip = m.top.findNode("strip")
+    m.stripList = m.top.findNode("stripList")
+    m.stripList.itemComponentName = "PosterCard"
+    m.stripList.numRows = 1
+    m.stripList.itemSize = [1820, 300]
+    m.stripList.rowItemSize = [[360, 202]]
+    m.stripList.rowItemSpacing = [[40, 0]]
+    m.stripList.drawFocusFeedback = false
+    m.stripList.showRowLabel = [false]
+    m.stripList.rowFocusAnimationStyle = "floatingFocus"
+    m.stripList.observeField("rowItemSelected", "onStripSelected")
 
     m.tabNames = ["Sports", "Later Today", "Live TV", "Movies", "TV Shows"]
     m.tabKinds = ["sports", "later", "live", "movies", "series"]
@@ -68,7 +82,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v8)")
+    showMessage("Signing in...  (v9)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -95,6 +109,10 @@ sub onLogin()
     m.nav.visible = true
     switchTab(0)
     focusScreen()
+    m.preloadTimer = CreateObject("roSGNode", "Timer")
+    m.preloadTimer.duration = 2.5
+    m.preloadTimer.observeField("fire", "preloadTabs")
+    m.preloadTimer.control = "start"
     if lastErr <> "" then
         toast("Note for Claude - last error: " + lastErr)
         sec = CreateObject("roRegistrySection", "IPTVPlayer")
@@ -105,6 +123,28 @@ end sub
 
 ' ---------- tabs ----------
 
+function ensureScreen(i as Integer) as Object
+    if m.screens[i] = invalid then
+        s = CreateObject("roSGNode", "BrowseScreen")
+        s.kind = m.tabKinds[i]
+        s.xtream = m.xtream
+        s.userAgent = m.ua
+        s.visible = false
+        s.observeField("selectedInfo", "onSelected")
+        m.screensHost.appendChild(s)
+        m.screens[i] = s
+        s.start = true
+    end if
+    return m.screens[i]
+end function
+
+' Build the other tabs quietly so switching is instant.
+sub preloadTabs()
+    for i = 0 to m.tabKinds.Count() - 1
+        ensureScreen(i)
+    end for
+end sub
+
 sub switchTab(i as Integer)
     n = m.tabKinds.Count()
     if i < 0 then i = n - 1
@@ -112,16 +152,7 @@ sub switchTab(i as Integer)
     for each s in m.screens
         if s <> invalid then s.visible = false
     end for
-    if m.screens[i] = invalid then
-        s = CreateObject("roSGNode", "BrowseScreen")
-        s.kind = m.tabKinds[i]
-        s.xtream = m.xtream
-        s.userAgent = m.ua
-        s.observeField("selectedInfo", "onSelected")
-        m.screensHost.appendChild(s)
-        m.screens[i] = s
-        s.start = true
-    end if
+    ensureScreen(i)
     m.screens[i].visible = true
     m.current = i
     m.nav.selectedIndex = i
@@ -240,6 +271,7 @@ sub playLive(row as Object, index as Integer)
 end sub
 
 sub stopVideo()
+    m.strip.visible = false
     saveProgress()
     m.video.control = "stop"
     m.video.visible = false
@@ -295,7 +327,7 @@ sub toast(text as String)
     m.status.text = text
     m.status.visible = true
     m.toastTimer = CreateObject("roSGNode", "Timer")
-    m.toastTimer.duration = 8
+    m.toastTimer.duration = 3
     m.toastTimer.observeField("fire", "hideToast")
     m.toastTimer.control = "start"
 end sub
@@ -313,6 +345,9 @@ sub showOsdText(title as String, subtitle as Dynamic)
     m.top.findNode("osdNow").text = subtitle
     m.top.findNode("osdTime").text = ""
     m.top.findNode("osdNext").text = ""
+    m.top.findNode("osdTag").text = ""
+    m.top.findNode("osdLive").visible = false
+    m.top.findNode("osdLogo").uri = ""
     m.top.findNode("osdBar").visible = false
     m.top.findNode("osdBarBg").visible = false
     m.osd.visible = true
@@ -321,13 +356,20 @@ sub showOsdText(title as String, subtitle as Dynamic)
 end sub
 
 sub showOsd(ch as Object)
-    showOsdText(ch.title, "")
+    title = ch.title
+    if ch.cardType = "game" and ch.team2 <> invalid and ch.team2 <> "" then title = ch.team1 + "  " + ch.sep + "  " + ch.team2
+    showOsdText(title, "")
     m.osdChannelId = ch.id
+    m.top.findNode("osdLive").visible = true
+    tag = ""
+    if m.zapRow <> invalid and m.zapRow.title <> invalid then tag = m.zapRow.title
+    if ch.cardType = "game" and ch.league <> invalid then tag = ch.league
+    m.top.findNode("osdTag").text = tag
+    if ch.HDPosterUrl <> invalid then m.top.findNode("osdLogo").uri = ch.HDPosterUrl
     g = freshGuide(m.epgCache, ch.id)
     if g <> invalid then
         renderOsd(g)
     else
-        m.top.findNode("osdNow").text = "Loading guide..."
         fetchGuide(ch.id)
     end if
 end sub
@@ -353,6 +395,7 @@ end sub
 
 sub renderOsd(entry as Object)
     lines = guideLines(entry)
+    if entry.items.Count() = 0 then return ' nothing useful to add
     m.top.findNode("osdNow").text = lines.now
     m.top.findNode("osdTime").text = lines.time
     m.top.findNode("osdNext").text = lines.next
@@ -364,6 +407,32 @@ end sub
 
 sub hideOsd()
     m.osd.visible = false
+end sub
+
+sub openStrip()
+    if m.zapRow = invalid then return
+    root = CreateObject("roSGNode", "ContentNode")
+    root.appendChild(m.zapRow.clone(true))
+    m.stripList.content = root
+    m.stripList.jumpToRowItem = [0, m.zapIndex]
+    title = "More"
+    if m.zapRow.title <> invalid and m.zapRow.title <> "" then title = m.zapRow.title
+    m.top.findNode("stripTitle").text = title
+    hideOsd()
+    m.strip.visible = true
+    m.stripList.setFocus(true)
+end sub
+
+sub closeStrip()
+    m.strip.visible = false
+    m.video.setFocus(true)
+end sub
+
+sub onStripSelected()
+    sel = m.stripList.rowItemSelected
+    if sel = invalid or sel.Count() < 2 then return
+    m.strip.visible = false
+    playLive(m.zapRow, sel[1])
 end sub
 
 ' ---------- playlist URL ----------
@@ -401,6 +470,13 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     if not press then return false
 
     if m.video.visible then
+        if m.strip.visible then
+            if key = "back" or key = "down" or key = "up" then
+                closeStrip()
+                return true
+            end if
+            return false
+        end if
         if key = "back" then
             stopVideo()
             return true
@@ -412,7 +488,10 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             else if key = "down" then
                 playLive(m.zapRow, m.zapIndex + 1)
                 return true
-            else if key = "OK" or key = "info" then
+            else if key = "OK" then
+                openStrip()
+                return true
+            else if key = "info" or key = "options" then
                 showOsd(m.zapRow.getChild(m.zapIndex))
                 return true
             end if
@@ -421,6 +500,18 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     end if
 
     if key = "options" then
+        ' * on a channel: add/remove it from Your Channels; anywhere else: login settings
+        if m.details = invalid and m.nav.visible and not m.nav.isInFocusChain() then
+            s = m.screens[m.current]
+            item = invalid
+            if s <> invalid then item = s.focusedItem
+            if item <> invalid and item.kind = "live" and item.id <> invalid and item.id <> "" then
+                added = toggleFav(item)
+                if added then toast("Added to Your Channels") else toast("Removed from Your Channels")
+                if m.screens[0] <> invalid then m.screens[0].refreshFavs = true
+                return true
+            end if
+        end if
         showUrlDialog()
         return true
     end if

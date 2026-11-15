@@ -31,6 +31,7 @@ sub init()
     m.emptyParensRe = CreateObject("roRegex", "\(\s*\)|\[\s*\]", "")
     m.sdRe = CreateObject("roRegex", "(^|\s|\(|\[)SD($|\s|\)|\])", "i")
     m.teamsPrefixRe = CreateObject("roRegex", "^(NFL|NBA|NHL|MLB|MLS|NCAAF|NCAAB|WNBA)\s+TEAMS\s*[|:\-]\s*", "i")
+    m.emptySlotRe = CreateObject("roRegex", "^[A-Z0-9+ ]{0,24}\s*[|:\-]\s*\d{0,3}[Kk]?\s*[|:\-]?\s*$|^[A-Z0-9+ ]{0,24}\d{1,3}\s*[|:\-]\s*$", "i")
     m.callSignRe = CreateObject("roRegex", "\s*\((W|K|C)[A-Z]{2,3}(-[A-Z0-9]+)?\)", "i")
     m.networkLeadRe = CreateObject("roRegex", "^(CBS|FOX|NBC|ABC|ESPN|TNT)\s+(.+)$", "i")
     m.qualityTailRe = CreateObject("roRegex", "\s+(SD|HD|FHD|UHD|HEVC|RAW)(?=\s|$)", "i")
@@ -106,6 +107,17 @@ end sub
 
 sub doCategories(req as Object)
     kind = req.kind
+    cachePath = "cachefs:/cats_" + kind + ".json"
+    sentCached = false
+    nowTs = CreateObject("roDateTime").AsSeconds()
+    cachedText = ReadAsciiFile(cachePath)
+    if cachedText <> "" then
+        cached = ParseJson(cachedText)
+        if cached <> invalid and cached.t <> invalid and nowTs - cached.t < 6 * 3600 and type(cached.cats) = "roArray" and cached.cats.Count() > 0 then
+            m.top.result = { cats: cached.cats }
+            sentCached = true
+        end if
+    end if
     action = "get_live_categories"
     if kind = "movies" then action = "get_vod_categories"
     if kind = "series" then action = "get_series_categories"
@@ -177,7 +189,7 @@ sub doCategories(req as Object)
             end for
             if ids <> "" then out.Push({ id: "soon:" + ids, name: groupNames[g] })
         end for
-        m.top.result = { cats: out }
+        finishCategories(cachePath, out, sentCached)
         return
     end if
     kept.SortBy("sortKey")
@@ -185,7 +197,12 @@ sub doCategories(req as Object)
     for each k in kept
         out.Push({ id: k.id, name: k.name })
     end for
-    m.top.result = { cats: out }
+    finishCategories(cachePath, out, sentCached)
+end sub
+
+sub finishCategories(path as String, cats as Object, sentCached as Boolean)
+    if cats.Count() > 0 then WriteAsciiFile(path, FormatJson({ t: CreateObject("roDateTime").AsSeconds(), cats: cats }))
+    if not sentCached then m.top.result = { cats: cats }
 end sub
 
 function leagueLabel(g as Integer) as String
@@ -304,8 +321,27 @@ end function
 ' Channel name cleanup: drop "USA: " / "US| " / "┃US┃ " prefixes.
 function cleanChannelName(raw as String) as String
     name = stripBoxPrefix(raw)
+    name = stripOddChars(name)
     if m.prefixRe.IsMatch(name) then name = m.prefixRe.Replace(name, "")
     return name.Trim()
+end function
+
+' Drop characters the Roku font can't draw (box art, emoji, fancy symbols).
+function stripOddChars(s as String) as String
+    out = ""
+    changed = false
+    for i = 1 to Len(s)
+        ch = Mid(s, i, 1)
+        code = Asc(ch)
+        if code < &h2000 or code = &h2013 or code = &h2014 or code = &h2018 or code = &h2019 or code = &h201C or code = &h201D or code = &h2022 then
+            out = out + ch
+        else
+            out = out + " "
+            changed = true
+        end if
+    end for
+    if changed then out = m.spacesRe.ReplaceAll(out, " ")
+    return out.Trim()
 end function
 
 ' What the card shows: "NFL TEAMS | CBS BEARS (WBBM) | CHICAGO" -> "Bears · CBS",
@@ -454,6 +490,7 @@ sub doItems(req as Object)
         skip = (name = "") or m.spanishChanRe.IsMatch(raw) or m.audioRe.IsMatch(raw) or m.ukRe.IsMatch(Left(raw, 8))
         if not skip and bostonOnly and not m.bostonRe.IsMatch(raw) then skip = true
         if not skip and Left(name, 4) = "####" then skip = true ' divider rows some providers use
+        if not skip and m.emptySlotRe.IsMatch(name) then skip = true ' "NFL | 01 -", "UFC 01 :" with no event yet
         if not skip then
             base = baseChannelName(name)
             isSD = m.sdRe.IsMatch(name)

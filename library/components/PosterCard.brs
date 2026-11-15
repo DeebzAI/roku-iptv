@@ -16,6 +16,8 @@ sub init()
 
     m.title.font = makeFont(24, false)
     m.placeholder.font = makeFont(30, true)
+    m.nameFont = m.placeholder.font
+    m.hintFont = makeFont(24, false)
     m.badge.font = makeFont(22, true)
     m.league.font = makeFont(22, true)
     m.team1.font = makeFont(36, true)
@@ -54,15 +56,25 @@ sub onContent()
     url = c.HDPosterUrl
     if url = invalid then url = ""
 
+    m.bg.opacity = 1.0
     m.game.visible = false
     m.img.visible = false
     m.corners.visible = false
     m.logo.visible = false
     m.placeholder.visible = true
+    m.placeholder.font = m.nameFont
     m.placeholder.text = c.title
     m.title.visible = true
 
-    if cardType = "game" then
+    if c.skeleton = true then
+        ' quiet grey placeholder while the row loads
+        m.placeholder.visible = false
+        m.title.visible = false
+        m.bg.opacity = 0.55
+    else if c.hint = true then
+        m.placeholder.font = m.hintFont
+        m.title.visible = false
+    else if cardType = "game" then
         ' scoreboard card: badge, league, two team lines; no logo, no caption
         m.placeholder.visible = false
         m.title.visible = false
