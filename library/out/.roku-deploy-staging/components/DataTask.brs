@@ -16,6 +16,14 @@ sub init()
     m.prefixRe = CreateObject("roRegex", "^(US|USA|UK|CA)\s*[:|\-]\s*", "i")
     m.qualityRe = CreateObject("roRegex", "(^|\s|\(|\[)(SD|HD|FHD|UHD|4K|HEVC|H265|RAW|HQ|LQ|1080P?|720P?|60FPS|50FPS)(?=$|\s|\)|\])", "i")
     m.spacesRe = CreateObject("roRegex", "[\s\(\)\[\]]+", "")
+    m.notEventCatRe = CreateObject("roRegex", "SPORT\+|FANDUEL|REPLAY|TEAMS|NETWORK", "i")
+    m.vsRe = CreateObject("roRegex", "\s(VS\.?|V\.?|@)\s", "i")
+    m.noEventRe = CreateObject("roRegex", "NO EVENT|NO GAME|OFF ?AIR|NO STREAM|STAND ?BY|COMING SOON", "i")
+    m.leaguePrefixRe = CreateObject("roRegex", "^([A-Z+]{2,10}\s){0,3}\d{1,3}\s*[:|\-](?!\d)\s*", "")
+    m.isoRe = CreateObject("roRegex", "(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(:\d{2})?", "")
+    m.timeRe = CreateObject("roRegex", "(\d{1,2}):(\d{2})\s*([AP]\.?M\.?)?\s*(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT)?", "i")
+    m.dateRe = CreateObject("roRegex", "\b(\d{1,2})/(\d{1,2})(/\d{2,4})?\b", "")
+    m.emptyParensRe = CreateObject("roRegex", "\(\s*\)|\[\s*\]", "")
     m.sdRe = CreateObject("roRegex", "(^|\s|\(|\[)SD($|\s|\)|\])", "i")
 end sub
 
@@ -90,6 +98,7 @@ sub doCategories(req as Object)
     data = getJson(apiUrl(action), m.top.userAgent)
     kept = []
     localIds = []
+    eventIds = []
     idx = 0
     if type(data) = "roArray" then
         for each c in data
@@ -105,6 +114,7 @@ sub doCategories(req as Object)
                 if keep then
                     cid = asStr(c.category_id)
                     if kind = "live" and m.localCatRe.IsMatch(raw) then localIds.Push(cid)
+                    if kind = "sports" and not m.notEventCatRe.IsMatch(raw) then eventIds.Push(cid)
                     rank = categoryRank(kind, up)
                     if not m.usRe.IsMatch(raw) and rank >= 90 then rank = rank + 50
                     kept.Push({ id: cid, name: prettyName(raw), sortKey: rank * 10000 + idx })
@@ -119,6 +129,14 @@ sub doCategories(req as Object)
             ids = ids + i
         end for
         kept.Push({ id: "local:" + ids, name: "Boston Local", sortKey: 0 })
+    end if
+    if kind = "sports" and eventIds.Count() > 0 then
+        ids = ""
+        for each i in eventIds
+            if ids <> "" then ids = ids + ","
+            ids = ids + i
+        end for
+        kept.Push({ id: "games:" + ids, name: "Games On Now", sortKey: 0 })
     end if
     kept.SortBy("sortKey")
     out = []
@@ -223,7 +241,7 @@ end function
 ' Big national sports channels first (base names are uppercase, quality tags removed).
 function channelPriority(base as String) as Integer
     if m.priorityRes = invalid then
-        pats = ["^ESPN$", "REDZONE", "^ESPN ?2$", "^(FS1|FOX SPORTS 1)$", "^NFL NETWORK", "^TNT( SPORTS)?$", "^TBS$", "^NBA ?TV$", "^NHL NETWORK", "^NESN", "NBC SPORTS BOSTON|^NBCSB", "^MLB NETWORK", "^CBS SPORTS", "^ESPNU$", "^SEC NETWORK", "^(BIG TEN|BTN)", "^ACC NETWORK", "^ESPN ?NEWS", "^(FS2|FOX SPORTS 2)$", "^GOLF", "^TENNIS CHANNEL"]
+        pats = ["^ESPN$", "REDZONE", "^ESPN ?2$", "^(FS1|FOX SPORTS 1)$", "^NFL NETWORK", "^TNT( SPORTS)?$", "^TBS$", "^NBA ?TV$", "^NHL NETWORK", "^NESN", "NBC SPORTS BOSTON|^NBCSB", "^MLB NETWORK", "^CBS SPORTS", "^ESPNU$", "^SEC NETWORK", "^(BIG TEN|BTN)", "^ACC NETWORK", "^ESPN ?N?EWS", "^(FS2|FOX SPORTS 2)$", "^GOLF", "^TENNIS CHANNEL"]
         m.priorityRes = []
         for each p in pats
             m.priorityRes.Push(CreateObject("roRegex", p, "i"))
@@ -285,8 +303,12 @@ sub doItems(req as Object)
     end if
 
     ' ----- live / sports channels -----
-    streams = []
     catId = req.categoryId
+    if Left(catId, 6) = "games:" then
+        doGamesRow(req, Mid(catId, 7))
+        return
+    end if
+    streams = []
     bostonOnly = false
     if Left(catId, 6) = "local:" then
         bostonOnly = true
@@ -341,6 +363,141 @@ sub doItems(req as Object)
     m.top.node = row
     m.top.result = { rowIndex: req.rowIndex, count: count }
 end sub
+
+' ---------- Games On Now ----------
+
+sub doGamesRow(req as Object, idList as String)
+    c = m.top.xtream
+    nowTs = CreateObject("roDateTime").AsSeconds()
+    games = []
+    seen = {}
+    for each oneId in idList.Tokenize(",")
+        part = getJson(apiUrl("get_live_streams") + "&category_id=" + oneId, m.top.userAgent)
+        if type(part) = "roArray" then
+            for each st in part
+                raw = asStr(st.name)
+                if m.vsRe.IsMatch(raw) and not m.noEventRe.IsMatch(raw) and not m.spanishChanRe.IsMatch(raw) then
+                    name = cleanChannelName(raw)
+                    ts = parseEventTime(name, nowTs)
+                    state = ""
+                    if ts = 0 then
+                        state = "on"
+                    else if ts <= nowTs and nowTs - ts < 4 * 3600 then
+                        state = "live"
+                    else if ts > nowTs and ts - nowTs < 14 * 3600 then
+                        state = "soon"
+                    end if
+                    if state <> "" then
+                        matchup = matchupText(name)
+                        key = UCase(matchup)
+                        if matchup <> "" and not seen.DoesExist(key) then
+                            seen[key] = true
+                            order = ts
+                            if state = "on" then order = nowTs
+                            if state = "soon" then order = order + 1000000000
+                            games.Push({ st: st, name: name, matchup: matchup, ts: ts, state: state, sortKey: order })
+                        end if
+                    end if
+                end if
+            end for
+        end if
+    end for
+    games.SortBy("sortKey")
+
+    row = CreateObject("roSGNode", "ContentNode")
+    count = 0
+    for each g in games
+        if count >= 60 then exit for
+        sid = asStr(g.st.stream_id)
+        label = "LIVE"
+        if g.state = "soon" then label = fmtTime(g.ts)
+        item = row.createChild("ContentNode")
+        item.title = label + "  ·  " + g.matchup
+        item.id = sid
+        item.HDPosterUrl = asStr(g.st.stream_icon)
+        item.Description = g.name
+        item.addFields({ kind: "live", cardType: "tile", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls" })
+        count = count + 1
+    end for
+    m.top.node = row
+    m.top.result = { rowIndex: req.rowIndex, count: count }
+end sub
+
+' "NFL 03: Buffalo Bills vs Kansas City Chiefs @ 4:25 PM ET" -> "Buffalo Bills vs Kansas City Chiefs"
+function matchupText(name as String) as String
+    t = m.leaguePrefixRe.Replace(name, "")
+    t = m.isoRe.ReplaceAll(t, " ")
+    t = m.timeRe.ReplaceAll(t, " ")
+    t = m.dateRe.ReplaceAll(t, " ")
+    t = m.emptyParensRe.ReplaceAll(t, " ")
+    t = m.spacesRe.ReplaceAll(t, " ").Trim()
+    ' trim dangling separators left behind by removed times
+    while Len(t) > 0 and Instr(1, "-|@:,.", Right(t, 1)) > 0
+        t = Left(t, Len(t) - 1).Trim()
+    end while
+    while Len(t) > 0 and Instr(1, "-|@:,.", Left(t, 1)) > 0
+        t = Mid(t, 2).Trim()
+    end while
+    return t
+end function
+
+function pad2(n as Integer) as String
+    if n < 10 then return "0" + n.ToStr()
+    return n.ToStr()
+end function
+
+' Reads a start time out of an event name. Times are taken as US Eastern unless marked PT/CT/MT.
+function parseEventTime(name as String, nowTs as Integer) as Integer
+    today = CreateObject("roDateTime")
+    today.ToLocalTime()
+    y = today.GetYear()
+    mo = today.GetMonth()
+    d = today.GetDayOfMonth()
+    h = -1
+    mi = 0
+    zone = ""
+    dateGiven = false
+
+    iso = m.isoRe.Match(name)
+    if iso.Count() >= 6 then
+        y = iso[1].ToInt()
+        mo = iso[2].ToInt()
+        d = iso[3].ToInt()
+        h = iso[4].ToInt()
+        mi = iso[5].ToInt()
+        dateGiven = true
+    else
+        tm = m.timeRe.Match(name)
+        if tm.Count() < 3 then return 0
+        h = tm[1].ToInt()
+        mi = tm[2].ToInt()
+        ampm = ""
+        if tm.Count() > 3 then ampm = UCase(tm[3])
+        if tm.Count() > 4 then zone = UCase(tm[4])
+        if Left(ampm, 1) = "P" and h < 12 then h = h + 12
+        if Left(ampm, 1) = "A" and h = 12 then h = 0
+        if ampm = "" and h >= 1 and h <= 11 then h = h + 12 ' sports default to evening
+        dm = m.dateRe.Match(name)
+        if dm.Count() >= 3 then
+            mo = dm[1].ToInt()
+            d = dm[2].ToInt()
+            dateGiven = true
+        end if
+    end if
+    if h < 0 or h > 23 or mi > 59 or mo < 1 or mo > 12 or d < 1 or d > 31 then return 0
+
+    if Left(zone, 1) = "P" then h = h + 3
+    if Left(zone, 1) = "C" then h = h + 1
+    if Left(zone, 1) = "M" then h = h + 2
+
+    dt = CreateObject("roDateTime")
+    dt.FromISO8601String(y.ToStr() + "-" + pad2(mo) + "-" + pad2(d) + "T00:00:00")
+    ts = dt.AsSeconds() + h * 3600 + mi * 60
+    ' convert local wall-clock time to real time
+    ts = ts + CreateObject("roDateTime").GetTimeZoneOffset() * 60
+    if not dateGiven and ts < nowTs - 6 * 3600 then ts = ts + 86400
+    return ts
+end function
 
 function formatFor(ext as String) as String
     e = LCase(ext)
