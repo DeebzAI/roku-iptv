@@ -21,8 +21,12 @@ sub init()
     m.noEventRe = CreateObject("roRegex", "NO EVENT|NO GAME|OFF ?AIR|NO STREAM|STAND ?BY|COMING SOON", "i")
     m.leaguePrefixRe = CreateObject("roRegex", "^([A-Z+]{2,10}\s){0,3}\d{1,3}\s*[:|\-](?!\d)\s*", "")
     m.isoRe = CreateObject("roRegex", "(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(:\d{2})?", "")
-    m.timeRe = CreateObject("roRegex", "(\d{1,2}):(\d{2})\s*([AP]\.?M\.?)?\s*(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT)?", "i")
-    m.dateRe = CreateObject("roRegex", "\b(\d{1,2})/(\d{1,2})(/\d{2,4})?\b", "")
+    m.timeRe = CreateObject("roRegex", "(\d{1,2}):(\d{2})\s*([AP]\.?M\.?)?\s*(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT|UK|GMT|BST|UTC|CET|CEST)?", "i")
+    m.dateRe = CreateObject("roRegex", "\b(\d{1,2})[/.](\d{1,2})([/.]\d{2,4})?\b", "")
+    m.monthNameRe = CreateObject("roRegex", "\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\.?\s+(\d{1,2})\b", "i")
+    m.dayMonthNameRe = CreateObject("roRegex", "\b(\d{1,2})(ST|ND|RD|TH)?\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\b", "i")
+    m.zoneRe = CreateObject("roRegex", "\b(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT|UK|GMT|BST|UTC|CET|CEST)\b", "i")
+    m.dayNameRe = CreateObject("roRegex", "\b(MON|TUE|TUES|WED|THU|THUR|THURS|FRI|SAT|SUN)(DAY)?\b\.?", "i")
     m.emptyParensRe = CreateObject("roRegex", "\(\s*\)|\[\s*\]", "")
     m.sdRe = CreateObject("roRegex", "(^|\s|\(|\[)SD($|\s|\)|\])", "i")
 end sub
@@ -381,10 +385,10 @@ sub doGamesRow(req as Object, idList as String)
                     ts = parseEventTime(name, nowTs)
                     state = ""
                     if ts = 0 then
-                        state = "on"
+                        state = "" ' no readable time: skip rather than guess
                     else if ts <= nowTs and nowTs - ts < 4 * 3600 then
                         state = "live"
-                    else if ts > nowTs and ts - nowTs < 14 * 3600 then
+                    else if ts > nowTs and ts - nowTs < 12 * 3600 then
                         state = "soon"
                     end if
                     if state <> "" then
@@ -429,6 +433,10 @@ function matchupText(name as String) as String
     t = m.isoRe.ReplaceAll(t, " ")
     t = m.timeRe.ReplaceAll(t, " ")
     t = m.dateRe.ReplaceAll(t, " ")
+    t = m.monthNameRe.ReplaceAll(t, " ")
+    t = m.dayMonthNameRe.ReplaceAll(t, " ")
+    t = m.dayNameRe.ReplaceAll(t, " ")
+    t = m.zoneRe.ReplaceAll(t, " ")
     t = m.emptyParensRe.ReplaceAll(t, " ")
     t = m.spacesRe.ReplaceAll(t, " ").Trim()
     ' trim dangling separators left behind by removed times
@@ -446,7 +454,8 @@ function pad2(n as Integer) as String
     return n.ToStr()
 end function
 
-' Reads a start time out of an event name. Times are taken as US Eastern unless marked PT/CT/MT.
+' Reads a start time out of an event name. Returns 0 if no usable time is found.
+' Times count as US Eastern unless marked (PT/CT/MT, UK/GMT/BST, CET).
 function parseEventTime(name as String, nowTs as Integer) as Integer
     today = CreateObject("roDateTime")
     today.ToLocalTime()
@@ -466,6 +475,8 @@ function parseEventTime(name as String, nowTs as Integer) as Integer
         h = iso[4].ToInt()
         mi = iso[5].ToInt()
         dateGiven = true
+        zm = m.zoneRe.Match(name)
+        if zm.Count() >= 2 then zone = UCase(zm[1])
     else
         tm = m.timeRe.Match(name)
         if tm.Count() < 3 then return 0
@@ -477,26 +488,60 @@ function parseEventTime(name as String, nowTs as Integer) as Integer
         if Left(ampm, 1) = "P" and h < 12 then h = h + 12
         if Left(ampm, 1) = "A" and h = 12 then h = 0
         if ampm = "" and h >= 1 and h <= 11 then h = h + 12 ' sports default to evening
-        dm = m.dateRe.Match(name)
-        if dm.Count() >= 3 then
-            mo = dm[1].ToInt()
-            d = dm[2].ToInt()
+
+        md = monthDay(name, mo, d)
+        if md <> invalid then
+            mo = md.mo
+            d = md.d
             dateGiven = true
         end if
     end if
     if h < 0 or h > 23 or mi > 59 or mo < 1 or mo > 12 or d < 1 or d > 31 then return 0
 
-    if Left(zone, 1) = "P" then h = h + 3
-    if Left(zone, 1) = "C" then h = h + 1
-    if Left(zone, 1) = "M" then h = h + 2
+    ' convert the stated zone to Eastern
+    if zone = "PT" or zone = "PST" or zone = "PDT" then h = h + 3
+    if zone = "CT" or zone = "CST" or zone = "CDT" then h = h + 1
+    if zone = "MT" or zone = "MST" or zone = "MDT" then h = h + 2
+    if zone = "UK" or zone = "GMT" or zone = "BST" or zone = "UTC" then h = h - 5
+    if zone = "CET" or zone = "CEST" then h = h - 6
 
     dt = CreateObject("roDateTime")
     dt.FromISO8601String(y.ToStr() + "-" + pad2(mo) + "-" + pad2(d) + "T00:00:00")
     ts = dt.AsSeconds() + h * 3600 + mi * 60
-    ' convert local wall-clock time to real time
     ts = ts + CreateObject("roDateTime").GetTimeZoneOffset() * 60
     if not dateGiven and ts < nowTs - 6 * 3600 then ts = ts + 86400
     return ts
+end function
+
+' Finds a month/day in the name. Handles 11/15, 15/11, 15.11, "Nov 15", "15 Nov".
+' Ambiguous numeric dates pick whichever is closest to today.
+function monthDay(name as String, curMo as Integer, curD as Integer) as Dynamic
+    months = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 }
+    mn = m.monthNameRe.Match(name)
+    if mn.Count() >= 3 then
+        mo = months[UCase(Left(mn[1], 3))]
+        if mo <> invalid then return { mo: mo, d: mn[2].ToInt() }
+    end if
+    nm = m.dayMonthNameRe.Match(name)
+    if nm.Count() >= 3 then
+        mo = months[UCase(Left(nm[3], 3))]
+        if mo <> invalid then return { mo: mo, d: nm[1].ToInt() }
+    end if
+    nd = m.dateRe.Match(name)
+    if nd.Count() >= 3 then
+        a = nd[1].ToInt()
+        b = nd[2].ToInt()
+        if a > 12 and b <= 12 then return { mo: b, d: a }
+        if b > 12 and a <= 12 then return { mo: a, d: b }
+        if a <= 12 and b <= 12 then
+            ' both readings possible: choose the one nearer today
+            dist1 = Abs((a - curMo) * 31 + (b - curD))
+            dist2 = Abs((b - curMo) * 31 + (a - curD))
+            if dist2 < dist1 then return { mo: b, d: a }
+            return { mo: a, d: b }
+        end if
+    end if
+    return invalid
 end function
 
 function formatFor(ext as String) as String
