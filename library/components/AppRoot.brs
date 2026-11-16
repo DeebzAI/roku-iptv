@@ -104,7 +104,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v10.6)")
+    showMessage("Signing in...  (v10.7)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -618,7 +618,7 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             return true
         end if
         if m.playingLive then
-            if key = "replay" then
+            if key = "replay" or key = "left" then
                 goPrevChannel()
                 return true
             else if key = "up" then
