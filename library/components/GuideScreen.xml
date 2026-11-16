@@ -13,7 +13,9 @@
   </interface>
   <children>
     <Label id="catName" translation="[100,140]" width="1000" color="0xFFFFFFFF" />
-    <Label id="catHint" translation="[1000,150]" width="820" horizAlign="right" color="0x8D97A3FF" text="◀  ▶  change category" />
+    <Poster uri="libpkg:/images/arrow_left.png" translation="[1470,152]" width="36" height="36" />
+    <Poster uri="libpkg:/images/arrow_right.png" translation="[1516,152]" width="36" height="36" />
+    <Label id="catHint" translation="[1566,150]" width="260" color="0x8D97A3FF" text="Change category" />
     <Label id="colNow" translation="[610,196]" width="400" color="0x6B7580FF" text="NOW" />
     <Label id="colNext" translation="[1400,196]" width="400" color="0x6B7580FF" text="UP NEXT" />
     <MarkupList id="list" translation="[100,232]" itemComponentName="GuideRow" />
