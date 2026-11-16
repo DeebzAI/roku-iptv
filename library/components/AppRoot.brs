@@ -104,7 +104,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v10.3)")
+    showMessage("Signing in...  (v10.4)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }

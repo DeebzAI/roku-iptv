@@ -16,10 +16,28 @@ function asStr(v as Dynamic) as String
     return ""
 end function
 
+' One Font node per size/weight for the whole app (shared through m.global), so
+' the font file is loaded a handful of times, not once per card.
 function makeFont(size as Integer, bold as Boolean) as Object
+    g = m.global
+    tag = "r"
+    if bold then tag = "b"
+    key = "font_" + tag + size.ToStr()
+    if g.hasField(key) then return g[key]
+    if not g.hasField("interOk") then
+        fs = CreateObject("roFileSystem")
+        g.addFields({ interOk: fs.Exists("libpkg:/fonts/Inter-Regular.ttf") and fs.Exists("libpkg:/fonts/Inter-SemiBold.ttf") })
+    end if
     f = CreateObject("roSGNode", "Font")
-    if bold then f.uri = "font:BoldSystemFontFile" else f.uri = "font:SystemFontFile"
+    if g.interOk then
+        if bold then f.uri = "libpkg:/fonts/Inter-SemiBold.ttf" else f.uri = "libpkg:/fonts/Inter-Regular.ttf"
+    else
+        if bold then f.uri = "font:BoldSystemFontFile" else f.uri = "font:SystemFontFile"
+    end if
     f.size = size
+    fld = {}
+    fld[key] = f
+    g.addFields(fld)
     return f
 end function
 
