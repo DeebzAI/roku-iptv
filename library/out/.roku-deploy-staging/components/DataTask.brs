@@ -372,7 +372,7 @@ function smartTitle(s as String) as String
         for each a in "NFL NBA WNBA NHL MLB MILB MLS UFC WWE AEW PPV HD FHD UHD 4K ESPN ESPNU ESPN2 TNT TBS FS1 FS2 CNN HLN MSNBC CNBC HBO AMC FX FXX FXM USA TLC HGTV MTV BET CBS NBC ABC PBS CW NESN NBCSB ACC SEC BTN TV DAZN AXS IFC TMC OWN ION NFHS PGA LIV F1 NCAA NCAAF NCAAB NJCAA CBSSN NBATV MAX TCM SNF MNF TNF II III IV ET PT AM PM UK US".Tokenize(" ")
             m.acronyms[a] = true
         end for
-        m.smallWords = { THE: "the", AND: "and", OF: "of", ON: "on", IN: "in", AT: "at", FOR: "for", TO: "to", VS: "vs", "VS.": "vs" }
+        m.smallWords = { "THE": "the", "AND": "and", "OF": "of", "ON": "on", "IN": "in", "AT": "at", "FOR": "for", "TO": "to", "VS": "vs", "VS.": "vs" }
     end if
     out = ""
     idx = 0
@@ -660,7 +660,8 @@ function teamLogo(league as String, name as String) as String
                 pairs.Push({ key: Left(entry, lastSp - 1), abbr: Mid(entry, lastSp + 1), len: 0 - (lastSp - 1) })
             end for
             pairs.SortBy("len") ' longest names first ("hornets" before "nets")
-            m.teamTable[lg] = pairs
+            ' bracket lookups are case-sensitive and bare literal keys store lowercase
+            m.teamTable[UCase(lg)] = pairs
         end for
     end if
     lgKey = UCase(Left(league, 3))
@@ -751,7 +752,7 @@ function parseEventTime(name as String, nowTs as Integer) as Integer
         ' a weekday like "Wed" with no date: move to that day
         wd = m.dayNameRe.Match(name)
         if wd.Count() >= 2 then
-            days = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 }
+            days = { "SUN": 0, "MON": 1, "TUE": 2, "WED": 3, "THU": 4, "FRI": 5, "SAT": 6 }
             target = days[UCase(Left(wd[1], 3))]
             if target <> invalid then
                 ahead = (target - today.GetDayOfWeek() + 7) MOD 7
@@ -769,7 +770,7 @@ end function
 ' Finds a month/day in the name. Handles 11/15, 15/11, 15.11, "Nov 15", "15 Nov".
 ' Ambiguous numeric dates pick whichever is closest to today.
 function monthDay(name as String, curMo as Integer, curD as Integer) as Dynamic
-    months = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 }
+    months = { "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6, "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12 }
     mn = m.monthNameRe.Match(name)
     if mn.Count() >= 3 then
         mo = months[UCase(Left(mn[1], 3))]
