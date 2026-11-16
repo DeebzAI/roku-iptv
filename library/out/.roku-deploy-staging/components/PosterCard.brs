@@ -16,6 +16,10 @@ sub init()
     m.league = m.top.findNode("league")
     m.team1 = m.top.findNode("team1")
     m.team2 = m.top.findNode("team2")
+    m.logoA = m.top.findNode("logoA")
+    m.logoB = m.top.findNode("logoB")
+    m.logoA.observeField("loadStatus", "onTeamLogo")
+    m.logoB.observeField("loadStatus", "onTeamLogo")
 
     m.title.font = makeFont(27, false)
     m.placeholder.font = makeFont(30, true)
@@ -24,7 +28,7 @@ sub init()
     m.badge.font = makeFont(24, true)
     m.league.font = makeFont(24, true)
     m.team1.font = makeFont(36, true)
-    m.team2.font = makeFont(32, false)
+    m.team2.font = makeFont(34, true)
 
     m.logo.observeField("loadStatus", "onArtStatus")
     m.img.observeField("loadStatus", "onArtStatus")
@@ -75,6 +79,7 @@ sub onContent()
     if url = invalid then url = ""
 
     m.bg.opacity = 1.0
+    m.gameItem = invalid
     m.game.visible = false
     m.img.visible = false
     m.corners.visible = false
@@ -110,13 +115,8 @@ sub onContent()
             m.badgeBg.blendColor = "0x3A4552FF"
         end if
         m.league.text = c.league
-        m.team1.text = c.team1
-        t2 = c.team2
-        if t2 <> invalid and t2 <> "" then
-            m.team2.text = c.sep + "  " + t2
-        else
-            m.team2.text = ""
-        end if
+        m.gameItem = c
+        layoutTeams(c.logo1 <> invalid and c.logo1 <> "", c.logo2 <> invalid and c.logo2 <> "")
     else if cardType = "poster" then
         m.img.width = m.w
         m.img.height = m.h
@@ -141,6 +141,48 @@ sub onContent()
     m.title.text = c.title
     m.title.translation = [0, m.h + 14]
     onFocus()
+end sub
+
+' Scoreboard rows: with logos -> [logo] Oilers / [logo] Flyers; without -> Oilers / @ Flyers
+sub layoutTeams(useA as Boolean, useB as Boolean)
+    c = m.gameItem
+    if c = invalid then return
+    t2 = c.team2
+    if t2 = invalid then t2 = ""
+    if useA then
+        m.logoA.uri = c.logo1
+        m.logoA.visible = true
+        m.team1.translation = [84, 80]
+        m.team1.width = 252
+    else
+        m.logoA.visible = false
+        m.team1.translation = [24, 78]
+        m.team1.width = 312
+    end if
+    m.team1.text = c.team1
+    if t2 = "" then
+        m.logoB.visible = false
+        m.team2.text = ""
+    else if useB then
+        m.logoB.uri = c.logo2
+        m.logoB.visible = true
+        m.team2.translation = [84, 136]
+        m.team2.width = 252
+        m.team2.text = t2
+    else
+        m.logoB.visible = false
+        m.team2.translation = [24, 128]
+        m.team2.width = 312
+        m.team2.text = c.sep + "  " + t2
+    end if
+end sub
+
+' A logo that fails to load drops that row back to plain text.
+sub onTeamLogo(event as Object)
+    if event.getData() <> "failed" or m.gameItem = invalid then return
+    useA = m.logoA.visible and m.logoA.loadStatus <> "failed"
+    useB = m.logoB.visible and m.logoB.loadStatus <> "failed"
+    layoutTeams(useA, useB)
 end sub
 
 ' Swap between artwork and the text fallback depending on whether the image loaded.

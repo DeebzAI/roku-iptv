@@ -10,6 +10,8 @@ sub init()
     m.heroBackdrop = m.top.findNode("heroBackdrop")
     m.heroPoster = m.top.findNode("heroPoster")
     m.heroLogo = m.top.findNode("heroLogo")
+    m.heroTeams = m.top.findNode("heroTeams")
+    m.top.findNode("heroAt").font = makeFont(56, true)
     m.heroBar = m.top.findNode("heroBar")
     m.heroBarBg = m.top.findNode("heroBarBg")
     m.heroTitle.font = makeFont(56, true)
@@ -331,6 +333,10 @@ sub showHero(item as Object)
         if item.cardType = "game" then
             if item.team2 <> "" then m.heroTitle.text = item.team1 + "  " + item.sep + "  " + item.team2
             m.heroMeta.text = joinParts([item.badge, item.league])
+            if item.logo1 <> invalid and item.logo1 <> "" and item.logo2 <> invalid and item.logo2 <> "" then
+                m.artTeams = [item.logo1, item.logo2, item.sep]
+                queueArt("teams", "x")
+            end if
         end if
         g = freshGuide(m.epgCache, item.id)
         if g <> invalid then showGuide(g) else m.heroDesc.text = ""
@@ -370,6 +376,17 @@ end sub
 
 sub applyArt()
     if m.artKind = invalid then return
+    m.heroTeams.visible = false
+    if m.artKind = "teams" and m.artTeams <> invalid then
+        m.heroBackdrop.visible = false
+        m.heroPoster.visible = false
+        m.heroLogo.visible = false
+        m.top.findNode("heroTeamA").uri = m.artTeams[0]
+        m.top.findNode("heroTeamB").uri = m.artTeams[1]
+        m.top.findNode("heroAt").text = m.artTeams[2]
+        m.heroTeams.visible = true
+        return
+    end if
     if m.artKind = "backdrop" and m.artUrl <> "" then
         if m.heroBackdrop.uri <> m.artUrl then m.heroBackdrop.uri = m.artUrl
         m.heroPoster.visible = false
@@ -391,6 +408,7 @@ sub applyArt()
 end sub
 
 sub hideArt()
+    m.heroTeams.visible = false
     m.heroBackdrop.visible = false
     m.heroPoster.visible = false
     m.heroLogo.visible = false

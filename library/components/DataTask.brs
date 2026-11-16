@@ -587,7 +587,10 @@ sub doGamesRow(req as Object, idList as String, mode as String)
         item.id = sid
         item.HDPosterUrl = asStr(g.st.stream_icon)
         item.Description = g.name
-        item.addFields({ kind: "live", cardType: "game", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls", badge: label, league: lg, team1: teams.a, team2: teams.b, sep: teams.sep })
+        logoA = teamLogo(g.league, teams.a)
+        logoB = ""
+        if teams.b <> "" then logoB = teamLogo(g.league, teams.b)
+        item.addFields({ kind: "live", cardType: "game", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls", badge: label, league: lg, team1: teams.a, team2: teams.b, sep: teams.sep, logo1: logoA, logo2: logoB })
         count = count + 1
     end for
     m.top.node = row
@@ -633,6 +636,41 @@ function splitTeams(matchup as String) as Object
         return { a: sp[1].Trim(), sep: sep, b: sp[3].Trim(), tag: tag }
     end if
     return { a: t, sep: "", b: "", tag: tag }
+end function
+
+' Team name -> ESPN logo URL for the big four leagues (personal use).
+function teamLogo(league as String, name as String) as String
+    if m.teamTable = invalid then
+        m.teamTable = {}
+        src = {
+            NFL: "cardinals ari|falcons atl|ravens bal|bills buf|panthers car|bears chi|bengals cin|browns cle|cowboys dal|broncos den|lions det|packers gb|texans hou|colts ind|jaguars jax|chiefs kc|raiders lv|chargers lac|rams lar|dolphins mia|vikings min|patriots ne|saints no|giants nyg|jets nyj|eagles phi|steelers pit|49ers sf|niners sf|seahawks sea|buccaneers tb|bucs tb|titans ten|commanders wsh",
+            NBA: "hawks atl|celtics bos|nets bkn|hornets cha|bulls chi|cavaliers cle|cavs cle|mavericks dal|mavs dal|nuggets den|pistons det|warriors gs|rockets hou|pacers ind|clippers lac|lakers lal|grizzlies mem|heat mia|bucks mil|timberwolves min|wolves min|pelicans no|knicks ny|thunder okc|magic orl|76ers phi|sixers phi|suns phx|trail blazers por|blazers por|kings sac|spurs sa|raptors tor|jazz utah|wizards wsh",
+            NHL: "ducks ana|bruins bos|sabres buf|flames cgy|hurricanes car|blackhawks chi|avalanche col|blue jackets cbj|stars dal|red wings det|oilers edm|panthers fla|kings la|wild min|canadiens mtl|predators nsh|devils nj|islanders nyi|rangers nyr|senators ott|flyers phi|penguins pit|sharks sj|kraken sea|blues stl|lightning tb|maple leafs tor|mammoth utah|canucks van|golden knights vgk|capitals wsh|jets wpg",
+            MLB: "diamondbacks ari|d-backs ari|braves atl|orioles bal|red sox bos|cubs chc|white sox chw|reds cin|guardians cle|rockies col|tigers det|astros hou|royals kc|angels laa|dodgers lad|marlins mia|brewers mil|twins min|mets nym|yankees nyy|athletics oak|phillies phi|pirates pit|padres sd|giants sf|mariners sea|cardinals stl|rays tb|rangers tex|blue jays tor|nationals wsh"
+        }
+        for each lg in src
+            pairs = []
+            for each entry in src[lg].Tokenize("|")
+                sp = Instr(1, entry, " ")
+                ' the abbreviation is after the last space
+                lastSp = 0
+                for i = 1 to Len(entry)
+                    if Mid(entry, i, 1) = " " then lastSp = i
+                end for
+                pairs.Push({ key: Left(entry, lastSp - 1), abbr: Mid(entry, lastSp + 1), len: 0 - (lastSp - 1) })
+            end for
+            pairs.SortBy("len") ' longest names first ("hornets" before "nets")
+            m.teamTable[lg] = pairs
+        end for
+    end if
+    lgKey = UCase(Left(league, 3))
+    pairs = m.teamTable[lgKey]
+    if pairs = invalid then return ""
+    lname = LCase(name)
+    for each p in pairs
+        if Instr(1, lname, p.key) > 0 then return "https://a.espncdn.com/i/teamlogos/" + LCase(lgKey) + "/500/" + p.abbr + ".png"
+    end for
+    return ""
 end function
 
 function pad2(n as Integer) as String
