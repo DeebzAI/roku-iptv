@@ -67,26 +67,30 @@ function apiUrl(action as String) as String
 end function
 
 function getJson(url as String, ua as String) as Dynamic
-    xfer = CreateObject("roUrlTransfer")
-    port = CreateObject("roMessagePort")
-    xfer.SetMessagePort(port)
-    xfer.SetUrl(url)
-    xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    xfer.InitClientCertificates()
-    xfer.EnableEncodings(true)
-    if ua <> "" then xfer.AddHeader("User-Agent", ua)
-    if not xfer.AsyncGetToString() then return invalid
-    msg = wait(60000, port)
-    if type(msg) <> "roUrlEvent" then
-        xfer.AsyncCancel()
-        m.lastError = "timed out"
-        return invalid
-    end if
-    if msg.GetResponseCode() <> 200 then
-        m.lastError = "server returned " + msg.GetResponseCode().ToStr()
-        return invalid
-    end if
-    return ParseJson(msg.GetString())
+    ' A stuck request is cancelled after 20s and tried once more, so one slow
+    ' call can't leave a row empty (the provider only allows a few at a time).
+    for attempt = 1 to 2
+        xfer = CreateObject("roUrlTransfer")
+        port = CreateObject("roMessagePort")
+        xfer.SetMessagePort(port)
+        xfer.SetUrl(url)
+        xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+        xfer.InitClientCertificates()
+        xfer.EnableEncodings(true)
+        if ua <> "" then xfer.AddHeader("User-Agent", ua)
+        if not xfer.AsyncGetToString() then return invalid
+        msg = wait(20000, port)
+        if type(msg) <> "roUrlEvent" then
+            xfer.AsyncCancel()
+            m.lastError = "timed out"
+        else if msg.GetResponseCode() <> 200 then
+            m.lastError = "server returned " + msg.GetResponseCode().ToStr()
+        else
+            return ParseJson(msg.GetString())
+        end if
+        if attempt = 1 then sleep(800)
+    end for
+    return invalid
 end function
 
 sub doLogin()
