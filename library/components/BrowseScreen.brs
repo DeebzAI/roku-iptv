@@ -332,7 +332,9 @@ sub showHero(item as Object)
         m.heroMeta.text = m.heroRowTitle
         if item.cardType = "game" then
             if item.team2 <> "" then m.heroTitle.text = item.team1 + "  " + item.sep + "  " + item.team2
-            m.heroMeta.text = joinParts([item.badge, item.league])
+            started = ""
+            if item.badge = "LIVE" and item.startTs <> invalid and item.startTs > 0 then started = "Started " + fmtTime(item.startTs)
+            m.heroMeta.text = joinParts([item.badge, item.league, started])
             if item.logo1 <> invalid and item.logo1 <> "" and item.logo2 <> invalid and item.logo2 <> "" then
                 m.artTeams = [item.logo1, item.logo2, item.sep]
                 queueArt("teams", "x")

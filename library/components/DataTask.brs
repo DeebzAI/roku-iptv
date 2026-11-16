@@ -40,6 +40,7 @@ sub init()
     m.punctRe = CreateObject("roRegex", "[^A-Z0-9+&]", "")
     m.tagRe = CreateObject("roRegex", "^\s*(SNF|MNF|TNF|NBA ON TNT)\b[\s:\-|]*", "i")
     m.splitRe = CreateObject("roRegex", "^(.*?)\s*(\bVS\.?|\bV\.?|@|\bAT)\s*(.+)$", "i")
+    m.trailJunkRe = CreateObject("roRegex", "(\s*[@:|]\s*)+((NFL|NBA|NHL|MLB|NCAAF|NCAAB|UFC|MLS)\s*)?\d{0,3}\s*$", "i")
 end sub
 
 sub execute()
@@ -587,10 +588,10 @@ sub doGamesRow(req as Object, idList as String, mode as String)
         item.id = sid
         item.HDPosterUrl = asStr(g.st.stream_icon)
         item.Description = g.name
-        logoA = teamLogo(g.league, teams.a)
-        logoB = ""
-        if teams.b <> "" then logoB = teamLogo(g.league, teams.b)
-        item.addFields({ kind: "live", cardType: "game", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls", badge: label, league: lg, team1: teams.a, team2: teams.b, sep: teams.sep, logo1: logoA, logo2: logoB })
+        infoA = teamInfo(g.league, teams.a)
+        infoB = { url: "", short: "" }
+        if teams.b <> "" then infoB = teamInfo(g.league, teams.b)
+        item.addFields({ kind: "live", cardType: "game", url: c.base + "/live/" + c.user + "/" + c.pass + "/" + sid + ".m3u8", fmt: "hls", badge: label, league: lg, team1: teams.a, team2: teams.b, sep: teams.sep, logo1: infoA.url, logo2: infoB.url, short1: infoA.short, short2: infoB.short, startTs: g.ts })
         count = count + 1
     end for
     m.top.node = row
@@ -610,6 +611,7 @@ function matchupText(name as String) as String
     t = m.zoneRe.ReplaceAll(t, " ")
     t = m.emptyParensRe.ReplaceAll(t, " ")
     t = m.spacesRe.ReplaceAll(t, " ").Trim()
+    t = m.trailJunkRe.ReplaceAll(t, "")
     ' trim dangling separators left behind by removed times
     while Len(t) > 0 and Instr(1, "-|@:,.", Right(t, 1)) > 0
         t = Left(t, Len(t) - 1).Trim()
@@ -639,7 +641,7 @@ function splitTeams(matchup as String) as Object
 end function
 
 ' Team name -> ESPN logo URL for the big four leagues (personal use).
-function teamLogo(league as String, name as String) as String
+function teamInfo(league as String, name as String) as Object
     if m.teamTable = invalid then
         m.teamTable = {}
         src = {
@@ -666,12 +668,19 @@ function teamLogo(league as String, name as String) as String
     end if
     lgKey = UCase(Left(league, 3))
     pairs = m.teamTable[lgKey]
-    if pairs = invalid then return ""
+    if pairs = invalid then return { url: "", short: "" }
     lname = LCase(name)
     for each p in pairs
-        if Instr(1, lname, p.key) > 0 then return "https://a.espncdn.com/i/teamlogos/" + LCase(lgKey) + "/500/" + p.abbr + ".png"
+        if Instr(1, lname, p.key) > 0 then
+            short = ""
+            for each w in p.key.Tokenize(" ")
+                if short <> "" then short = short + " "
+                short = short + UCase(Left(w, 1)) + Mid(w, 2)
+            end for
+            return { url: "https://a.espncdn.com/i/teamlogos/" + LCase(lgKey) + "/500/" + p.abbr + ".png", short: short }
+        end if
     end for
-    return ""
+    return { url: "", short: "" }
 end function
 
 function pad2(n as Integer) as String

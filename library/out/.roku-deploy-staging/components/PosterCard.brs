@@ -149,6 +149,10 @@ sub layoutTeams(useA as Boolean, useB as Boolean)
     if c = invalid then return
     t2 = c.team2
     if t2 = invalid then t2 = ""
+    n1 = c.team1
+    n2 = t2
+    if c.short1 <> invalid and c.short1 <> "" then n1 = c.short1
+    if c.short2 <> invalid and c.short2 <> "" then n2 = c.short2
     if useA then
         m.logoA.uri = c.logo1
         m.logoA.visible = true
@@ -159,7 +163,7 @@ sub layoutTeams(useA as Boolean, useB as Boolean)
         m.team1.translation = [24, 78]
         m.team1.width = 312
     end if
-    m.team1.text = c.team1
+    m.team1.text = n1
     if t2 = "" then
         m.logoB.visible = false
         m.team2.text = ""
@@ -168,7 +172,7 @@ sub layoutTeams(useA as Boolean, useB as Boolean)
         m.logoB.visible = true
         m.team2.translation = [84, 136]
         m.team2.width = 252
-        m.team2.text = t2
+        m.team2.text = c.sep + "  " + n2
     else
         m.logoB.visible = false
         m.team2.translation = [24, 128]
