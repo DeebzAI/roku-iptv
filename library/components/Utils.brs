@@ -19,13 +19,6 @@ end function
 function makeFont(size as Integer, bold as Boolean) as Object
     f = CreateObject("roSGNode", "Font")
     if bold then f.uri = "font:BoldSystemFontFile" else f.uri = "font:SystemFontFile"
-    ' Inter (Apple-style) when the font files made it into the library; system font otherwise
-    fs = CreateObject("roFileSystem")
-    if bold and fs.Exists("libpkg:/fonts/Inter-SemiBold.ttf") then
-        f.uri = "libpkg:/fonts/Inter-SemiBold.ttf"
-    else if (not bold) and fs.Exists("libpkg:/fonts/Inter-Regular.ttf") then
-        f.uri = "libpkg:/fonts/Inter-Regular.ttf"
-    end if
     f.size = size
     return f
 end function
