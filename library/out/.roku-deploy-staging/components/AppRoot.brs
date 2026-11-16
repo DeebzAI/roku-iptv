@@ -12,10 +12,10 @@ sub init()
     m.clock.font = makeFont(30, false)
     m.top.findNode("osdChannel").font = makeFont(54, true)
     m.top.findNode("osdNow").font = makeFont(32, false)
-    m.top.findNode("osdTime").font = makeFont(26, false)
-    m.top.findNode("osdNext").font = makeFont(26, false)
-    m.top.findNode("osdLiveText").font = makeFont(26, true)
-    m.top.findNode("osdTag").font = makeFont(26, true)
+    m.top.findNode("osdTime").font = makeFont(28, false)
+    m.top.findNode("osdNext").font = makeFont(28, false)
+    m.top.findNode("osdLiveText").font = makeFont(28, true)
+    m.top.findNode("osdTag").font = makeFont(28, true)
     m.top.findNode("stripTitle").font = makeFont(32, true)
     m.strip = m.top.findNode("strip")
     m.stripList = m.top.findNode("stripList")
@@ -82,7 +82,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v9)")
+    showMessage("Signing in...  (v9.1)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -156,6 +156,7 @@ sub switchTab(i as Integer)
     m.screens[i].visible = true
     m.current = i
     m.nav.selectedIndex = i
+    saveSetting("lastTab", i.ToStr())
 end sub
 
 sub focusNav()
@@ -176,6 +177,8 @@ sub onSelected(event as Object)
     item = info.item
     if item.kind = "live" then
         playLive(info.row, info.index)
+    else if item.kind = "resume" then
+        playVodRequest({ url: item.url, title: item.title, format: item.fmt, subtitle: item.subline, resumeKey: item.resumeKey, startAt: item.startAt, poster: item.HDPosterUrl })
     else
         openDetails(item)
     end if
@@ -205,7 +208,12 @@ end sub
 
 sub onPlayRequest(event as Object)
     req = event.getData()
+    playVodRequest(req)
+end sub
+
+sub playVodRequest(req as Object)
     m.playingLive = false
+    m.resumeMeta = req
     m.resumeKey = ""
     if req.resumeKey <> invalid then m.resumeKey = req.resumeKey
     m.startAt = 0
@@ -276,6 +284,9 @@ sub stopVideo()
     m.video.control = "stop"
     m.video.visible = false
     hideOsd()
+    ' Continue Watching rows pick up the new spot
+    if m.screens[3] <> invalid then m.screens[3].refreshContinue = true
+    if m.screens[4] <> invalid then m.screens[4].refreshContinue = true
     if m.details <> invalid then
         m.details.refresh = true
         m.details.setFocus(true)
@@ -296,7 +307,7 @@ sub saveProgress()
     dur = Int(m.video.duration)
     if posSecs <= 0 then return
     m.lastSave = posSecs
-    saveResume(m.resumeKey, posSecs, dur)
+    saveResume(m.resumeKey, posSecs, dur, m.resumeMeta)
 end sub
 
 sub onVideoState()
@@ -334,6 +345,33 @@ end sub
 
 sub hideToast()
     m.status.visible = false
+end sub
+
+' Short confirmation pill near the top of the screen.
+sub banner(text as String)
+    b = m.top.findNode("banner")
+    t = m.top.findNode("bannerText")
+    bg = m.top.findNode("bannerBg")
+    if m.bannerFont = invalid then m.bannerFont = makeFont(30, true)
+    t.font = m.bannerFont
+    w = 120 + Len(text) * 17
+    if w > 1500 then w = 1500
+    bg.width = w
+    t.width = w
+    b.translation = [Int((1920 - w) / 2), 160]
+    t.text = text
+    b.visible = true
+    if m.bannerTimer = invalid then
+        m.bannerTimer = CreateObject("roSGNode", "Timer")
+        m.bannerTimer.duration = 2.5
+        m.bannerTimer.observeField("fire", "hideBanner")
+    end if
+    m.bannerTimer.control = "stop"
+    m.bannerTimer.control = "start"
+end sub
+
+sub hideBanner()
+    m.top.findNode("banner").visible = false
 end sub
 
 ' ---------- on-screen info bar ----------
@@ -507,7 +545,7 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             if s <> invalid then item = s.focusedItem
             if item <> invalid and item.kind = "live" and item.id <> invalid and item.id <> "" then
                 added = toggleFav(item)
-                if added then toast("Added to Your Channels") else toast("Removed from Your Channels")
+                if added then banner("Added " + item.title + " to Your Channels") else banner("Removed " + item.title + " from Your Channels")
                 if m.screens[0] <> invalid then m.screens[0].refreshFavs = true
                 return true
             end if

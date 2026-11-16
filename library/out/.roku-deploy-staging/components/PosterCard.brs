@@ -6,6 +6,9 @@ sub init()
     m.corners = m.top.findNode("corners")
     m.logo = m.top.findNode("logo")
     m.ring = m.top.findNode("ring")
+    m.shadow = m.top.findNode("shadow")
+    m.progBg = m.top.findNode("progBg")
+    m.prog = m.top.findNode("prog")
     m.title = m.top.findNode("title")
     m.game = m.top.findNode("game")
     m.badgeBg = m.top.findNode("badgeBg")
@@ -14,12 +17,12 @@ sub init()
     m.team1 = m.top.findNode("team1")
     m.team2 = m.top.findNode("team2")
 
-    m.title.font = makeFont(24, false)
+    m.title.font = makeFont(27, false)
     m.placeholder.font = makeFont(30, true)
     m.nameFont = m.placeholder.font
-    m.hintFont = makeFont(24, false)
-    m.badge.font = makeFont(22, true)
-    m.league.font = makeFont(22, true)
+    m.hintFont = makeFont(27, false)
+    m.badge.font = makeFont(24, true)
+    m.league.font = makeFont(24, true)
     m.team1.font = makeFont(36, true)
     m.team2.font = makeFont(32, false)
 
@@ -52,6 +55,20 @@ sub onContent()
     m.ring.width = m.w + 14
     m.ring.height = m.h + 14
     m.card.scaleRotateCenter = [m.w / 2, m.h / 2]
+    m.shadow.translation = [-40, -32]
+    m.shadow.width = m.w + 80
+    m.shadow.height = m.h + 80
+    ' resume progress (Continue Watching)
+    m.progBg.visible = false
+    m.prog.visible = false
+    if c.progress <> invalid and c.progress > 0 then
+        m.progBg.translation = [16, m.h - 24]
+        m.progBg.width = m.w - 32
+        m.prog.translation = [16, m.h - 24]
+        m.prog.width = Int((m.w - 32) * c.progress)
+        m.progBg.visible = true
+        m.prog.visible = true
+    end if
 
     url = c.HDPosterUrl
     if url = invalid then url = ""
@@ -82,7 +99,7 @@ sub onContent()
         badge = c.badge
         if badge = invalid then badge = ""
         m.badge.text = badge
-        bw = 30 + Len(badge) * 13
+        bw = 32 + Len(badge) * 14
         if bw < 76 then bw = 76
         m.badgeBg.width = bw
         m.badge.width = bw
@@ -144,6 +161,7 @@ sub onFocus()
     s = 1 + 0.09 * fp
     m.card.scale = [s, s]
     m.ring.opacity = fp
+    m.shadow.opacity = fp
     m.title.translation = [0, m.h + 14 + m.h * 0.045 * fp]
     if fp > 0.5 then m.title.color = "0xFFFFFFFF" else m.title.color = "0x8D97A3FF"
 end sub

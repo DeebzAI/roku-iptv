@@ -109,17 +109,32 @@ function getResume(key as String) as Integer
     return e.p
 end function
 
-sub saveResume(key as String, posSecs as Integer, dur as Integer)
+sub saveResume(key as String, posSecs as Integer, dur as Integer, meta = invalid as Dynamic)
     if key = "" then return
     t = resumeTable()
     ' Forget it if barely started or basically finished.
     if posSecs < 60 or (dur > 0 and posSecs > dur * 0.94) then
         t.Delete(key)
     else
-        t[key] = { p: posSecs, d: dur, t: CreateObject("roDateTime").AsSeconds() }
+        e = { p: posSecs, d: dur, t: CreateObject("roDateTime").AsSeconds() }
+        old = t[key]
+        if meta <> invalid then
+            e.n = meta.title
+            e.i = meta.poster
+            e.u = meta.url
+            e.f = meta.format
+            e.s = meta.subtitle
+        else if old <> invalid then
+            e.n = old.n
+            e.i = old.i
+            e.u = old.u
+            e.f = old.f
+            e.s = old.s
+        end if
+        t[key] = e
     end if
-    ' Keep only the 40 most recent.
-    while t.Count() > 40
+    ' Keep only the 20 most recent (registry space is small).
+    while t.Count() > 20
         oldestKey = ""
         oldest = 2147483647
         for each k in t
@@ -191,4 +206,18 @@ function toggleFav(item as Object) as Boolean
     sec.Write("favs", FormatJson(kept))
     sec.Flush()
     return not removed
+end function
+
+' Recent half-watched titles for the Continue Watching row. prefix: "m" movies, "e" episodes.
+function continueList(prefix as String) as Object
+    t = resumeTable()
+    list = []
+    for each k in t
+        e = t[k]
+        if Left(k, 1) = prefix and e.u <> invalid and e.u <> "" then
+            list.Push({ key: k, title: e.n, poster: e.i, url: e.u, fmt: e.f, sub: e.s, pos: e.p, dur: e.d, t: e.t, sortKey: 0 - e.t })
+        end if
+    end for
+    list.SortBy("sortKey")
+    return list
 end function

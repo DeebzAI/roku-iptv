@@ -13,8 +13,8 @@ sub init()
     m.heroBar = m.top.findNode("heroBar")
     m.heroBarBg = m.top.findNode("heroBarBg")
     m.heroTitle.font = makeFont(56, true)
-    m.heroMeta.font = makeFont(28, false)
-    m.heroDesc.font = makeFont(28, false)
+    m.heroMeta.font = makeFont(30, false)
+    m.heroDesc.font = makeFont(30, false)
     m.status.font = makeFont(32, false)
 
     m.loaded = {}
@@ -112,8 +112,20 @@ sub onCategoriesImpl()
         fillFavs(favRow)
         m.loaded[insertAt.ToStr()] = true
     end if
+    if m.top.kind = "movies" or m.top.kind = "series" then
+        contRow = CreateObject("roSGNode", "ContentNode")
+        contRow.title = "Continue Watching"
+        contRow.id = "continue"
+        root.insertChild(contRow, 0)
+        m.contIndex = 0
+        fillContinue(contRow)
+        m.loaded["0"] = true
+    end if
     m.rows.content = root
     m.status.visible = false
+    queueRow(0)
+    queueRow(1)
+    queueRow(2)
     ' keep live game rows fresh
     m.refreshTimer = CreateObject("roSGNode", "Timer")
     m.refreshTimer.duration = 300
@@ -150,6 +162,35 @@ sub fillFavs(row as Object)
         it.HDPosterUrl = f.logo
         it.addFields({ kind: "live", cardType: "tile", url: f.url, fmt: "hls" })
     end for
+end sub
+
+sub fillContinue(row as Object)
+    row.removeChildrenIndex(row.getChildCount(), 0)
+    prefix = "m"
+    if m.top.kind = "series" then prefix = "e"
+    list = continueList(prefix)
+    if list.Count() = 0 then
+        hint = row.createChild("ContentNode")
+        hint.title = "Things you start watching will show up here"
+        hint.addFields({ cardType: "poster", hint: true })
+        return
+    end if
+    for each e in list
+        it = row.createChild("ContentNode")
+        it.title = e.title
+        it.HDPosterUrl = e.poster
+        prog = 0.0
+        if e.dur > 0 then prog = e.pos / e.dur
+        sub2 = e.sub
+        if sub2 = invalid then sub2 = ""
+        it.addFields({ kind: "resume", cardType: "poster", url: e.url, fmt: e.fmt, resumeKey: e.key, startAt: e.pos, dur: e.dur, progress: prog, subline: sub2 })
+    end for
+end sub
+
+sub onRefreshContinue()
+    if m.contIndex = invalid or m.rows.content = invalid then return
+    row = m.rows.content.getChild(m.contIndex)
+    if row <> invalid then fillContinue(row)
 end sub
 
 sub onRefreshFavs()
@@ -302,6 +343,12 @@ sub showHero(item as Object)
             m.heroDesc.text = ""
             showPosterArt(item.HDPosterUrl)
         end if
+    else if kind = "resume" then
+        left = ""
+        if item.dur > 0 then left = Int((item.dur - item.startAt) / 60).ToStr() + " min left"
+        m.heroMeta.text = joinParts(["Resume at " + fmtClock(item.startAt), left])
+        m.heroDesc.text = item.subline
+        showPosterArt(item.HDPosterUrl)
     else if kind = "series" then
         m.heroMeta.text = joinParts([item.year, item.genre, ratingText(item.rating)])
         m.heroDesc.text = item.Description

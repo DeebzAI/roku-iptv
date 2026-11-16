@@ -1,5 +1,5 @@
 title=IPTV Player Library
 major_version=1
 minor_version=0
-build_version=9
+build_version=10
 sg_component_libs_provided=IPTVLib

@@ -12,18 +12,21 @@
     <script type="text/brightscript" uri="pkg:/source/bslib.brs" />
     <children>
         <Group id="card">
+            <Poster id="shadow" uri="libpkg:/images/shadow.9.png" opacity="0" />
             <Poster id="bg" uri="libpkg:/images/card.9.png" />
             <Label id="placeholder" horizAlign="center" vertAlign="center" wrap="true" maxLines="3" color="0xE6E9EDFF" />
             <Poster id="img" loadDisplayMode="scaleToFill" loadWidth="230" loadHeight="345" visible="false" />
             <Poster id="corners" uri="libpkg:/images/corners_poster.png" width="230" height="345" visible="false" />
             <Poster id="logo" loadDisplayMode="scaleToFit" loadWidth="288" loadHeight="142" visible="false" />
             <Group id="game" visible="false">
-                <Poster id="badgeBg" uri="libpkg:/images/pill.9.png" translation="[22,20]" height="40" />
-                <Label id="badge" translation="[22,20]" height="40" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />
+                <Poster id="badgeBg" uri="libpkg:/images/pill.9.png" translation="[22,20]" height="42" />
+                <Label id="badge" translation="[22,20]" height="42" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />
                 <Label id="league" translation="[180,20]" width="158" height="40" horizAlign="right" vertAlign="center" color="0x8D97A3FF" />
                 <Label id="team1" translation="[24,78]" width="312" color="0xFFFFFFFF" />
                 <Label id="team2" translation="[24,128]" width="312" color="0xC9D0D8FF" />
             </Group>
+            <Rectangle id="progBg" height="8" color="0x00000099" visible="false" />
+            <Rectangle id="prog" height="8" color="0xFFFFFFFF" visible="false" />
             <Poster id="ring" uri="libpkg:/images/ring.9.png" opacity="0" />
         </Group>
         <Label id="title" color="0x8D97A3FF" wrap="true" maxLines="2" />

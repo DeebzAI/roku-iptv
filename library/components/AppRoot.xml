@@ -3,10 +3,15 @@
   <children>
     <Rectangle width="1920" height="1080" color="0x0E1116FF" />
     <Group id="screens" />
-    <NavBar id="nav" translation="[0,40]" visible="false" />
-    <Label id="clock" translation="[1560,52]" width="280" horizAlign="right" color="0xB8C0C8FF" />
+    <NavBar id="nav" translation="[0,64]" visible="false" />
+    <Label id="clock" translation="[1560,76]" width="280" horizAlign="right" color="0xB8C0C8FF" />
     <Group id="detailsHost" />
     <Label id="status" translation="[0,500]" width="1920" horizAlign="center" wrap="true" color="0xFFFFFFFF" />
+    <!-- banner for short confirmations (e.g. favorites) -->
+    <Group id="banner" visible="false">
+      <Poster id="bannerBg" uri="libpkg:/images/pill.9.png" blendColor="0x2A3340F2" height="72" />
+      <Label id="bannerText" height="72" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />
+    </Group>
 
     <Video id="video" width="1920" height="1080" visible="false" />
 

@@ -17,14 +17,14 @@ sub init()
     m.episodes = m.top.findNode("episodes")
     m.status = m.top.findNode("status")
     m.title.font = makeFont(62, true)
-    m.meta.font = makeFont(28, false)
-    m.plot.font = makeFont(28, false)
+    m.meta.font = makeFont(30, false)
+    m.plot.font = makeFont(30, false)
     m.status.font = makeFont(28, false)
     m.top.findNode("playLabel").font = makeFont(32, true)
-    m.seasons.font = makeFont(28, true)
-    m.seasons.focusedFont = makeFont(28, true)
-    m.episodes.font = makeFont(28, false)
-    m.episodes.focusedFont = makeFont(28, true)
+    m.seasons.font = makeFont(30, true)
+    m.seasons.focusedFont = makeFont(30, true)
+    m.episodes.font = makeFont(30, false)
+    m.episodes.focusedFont = makeFont(30, true)
     m.mode = "movie"
     m.seriesData = invalid
     m.seasons.observeField("itemFocused", "onSeasonFocused")
@@ -145,7 +145,7 @@ sub onEpisodeSelected()
     list = m.seriesData.episodes[m.currentSeason]
     e = list[m.episodes.itemSelected]
     if e = invalid then return
-    m.top.playRequest = { url: e.url, title: e.title, format: e.fmt, subtitle: m.top.item.title + "  ·  Season " + m.currentSeason, resumeKey: "e" + e.id, startAt: getResume("e" + e.id) }
+    m.top.playRequest = { url: e.url, title: e.title, format: e.fmt, subtitle: m.top.item.title + "  ·  Season " + m.currentSeason, resumeKey: "e" + e.id, startAt: getResume("e" + e.id), poster: m.top.item.HDPosterUrl }
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
@@ -153,10 +153,10 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     if m.mode = "movie" then
         item = m.top.item
         if key = "OK" and m.playBtn.hasFocus() then
-            m.top.playRequest = { url: item.url, title: item.title, format: item.fmt, subtitle: m.meta.text, resumeKey: "m" + item.id, startAt: getResume("m" + item.id) }
+            m.top.playRequest = { url: item.url, title: item.title, format: item.fmt, subtitle: m.meta.text, resumeKey: "m" + item.id, startAt: getResume("m" + item.id), poster: item.HDPosterUrl }
             return true
         else if key = "OK" and m.restartBtn.hasFocus() then
-            m.top.playRequest = { url: item.url, title: item.title, format: item.fmt, subtitle: m.meta.text, resumeKey: "m" + item.id, startAt: 0 }
+            m.top.playRequest = { url: item.url, title: item.title, format: item.fmt, subtitle: m.meta.text, resumeKey: "m" + item.id, startAt: 0, poster: item.HDPosterUrl }
             return true
         else if key = "right" and m.playBtn.hasFocus() and m.restartBtn.visible then
             m.restartBtn.setFocus(true)
