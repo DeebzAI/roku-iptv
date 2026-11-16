@@ -427,7 +427,7 @@ sub doItems(req as Object)
         data = getJson(apiUrl(action) + "&category_id=" + req.categoryId, m.top.userAgent)
         if type(data) = "roArray" then
             for each st in data
-                if count >= 150 then exit for
+                if count >= 80 then exit for
                 name = asStr(st.name).Trim()
                 if name <> "" and not m.ukRe.IsMatch(Left(name, 6)) then
                     item = row.createChild("ContentNode")

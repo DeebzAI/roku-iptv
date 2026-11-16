@@ -55,6 +55,7 @@ sub onContent()
     m.ring.width = m.w + 14
     m.ring.height = m.h + 14
     m.card.scaleRotateCenter = [m.w / 2, m.h / 2]
+    m.shadow.visible = (cardType <> "poster") ' posters skip the shadow to save memory
     m.shadow.translation = [-40, -32]
     m.shadow.width = m.w + 80
     m.shadow.height = m.h + 80

@@ -82,7 +82,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v9.1)")
+    showMessage("Signing in...  (v9.2)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -140,8 +140,10 @@ end function
 
 ' Build the other tabs quietly so switching is instant.
 sub preloadTabs()
+    ' only the light, channel-based tabs; poster tabs load when opened (memory)
     for i = 0 to m.tabKinds.Count() - 1
-        ensureScreen(i)
+        k = m.tabKinds[i]
+        if k <> "movies" and k <> "series" then ensureScreen(i)
     end for
 end sub
 
