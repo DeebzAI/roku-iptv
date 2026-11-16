@@ -1,10 +1,10 @@
 sub init()
     m.tabs = m.top.findNode("tabs")
-    m.tabW = 230
+    m.tabW = 200
     m.pills = []
     m.labels = []
-    m.fontOn = makeFont(32, true)
-    m.fontOff = makeFont(32, false)
+    m.fontOn = makeFont(28, true)
+    m.fontOff = makeFont(28, false)
 end sub
 
 sub build()
@@ -19,11 +19,11 @@ sub build()
         pill = g.createChild("Poster")
         pill.uri = "libpkg:/images/pill.9.png"
         pill.width = m.tabW - 24
-        pill.height = 64
+        pill.height = 54
         pill.translation = [12, 0]
         lbl = g.createChild("Label")
         lbl.width = m.tabW
-        lbl.height = 64
+        lbl.height = 54
         lbl.horizAlign = "center"
         lbl.vertAlign = "center"
         lbl.text = items[i]

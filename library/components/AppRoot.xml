@@ -4,6 +4,7 @@
     <Rectangle width="1920" height="1080" color="0x0E1116FF" />
     <Group id="screens" />
     <NavBar id="nav" translation="[0,64]" visible="false" />
+    <Label id="liveBadge" translation="[100,80]" width="400" color="0xE5484DFF" visible="false" />
     <Label id="clock" translation="[1560,76]" width="280" horizAlign="right" color="0xB8C0C8FF" />
     <Group id="detailsHost" />
     <Label id="status" translation="[0,500]" width="1920" horizAlign="center" wrap="true" color="0xFFFFFFFF" />
@@ -14,6 +15,17 @@
     </Group>
 
     <Video id="video" width="1920" height="1080" visible="false" />
+
+    <!-- shown while a stream starts, then fades away -->
+    <Group id="splash" visible="false">
+      <Rectangle width="1920" height="1080" color="0x0E1116FF" />
+      <Poster id="splashLogo" translation="[710,300]" width="500" height="280" loadDisplayMode="scaleToFit" loadWidth="500" loadHeight="280" />
+      <Label id="splashTitle" translation="[160,640]" width="1600" horizAlign="center" color="0xFFFFFFFF" />
+      <Label id="splashSub" translation="[160,720]" width="1600" horizAlign="center" color="0x8D97A3FF" text="Starting stream..." />
+    </Group>
+    <Animation id="splashFade" duration="0.45" easeFunction="linear">
+      <FloatFieldInterpolator key="[0.0, 1.0]" keyValue="[1.0, 0.0]" fieldToInterp="splash.opacity" />
+    </Animation>
 
     <!-- player info bar: fades up from the bottom -->
     <Group id="osd" visible="false">

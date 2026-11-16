@@ -11,7 +11,9 @@ sub init()
     m.heroPoster = m.top.findNode("heroPoster")
     m.heroLogo = m.top.findNode("heroLogo")
     m.heroTeams = m.top.findNode("heroTeams")
-    m.top.findNode("heroAt").font = makeFont(56, true)
+    m.top.findNode("heroAt").font = makeFont(40, true)
+    m.heroTint = m.top.findNode("heroTint")
+    m.liveByRow = {}
     m.heroBar = m.top.findNode("heroBar")
     m.heroBarBg = m.top.findNode("heroBarBg")
     m.heroTitle.font = makeFont(56, true)
@@ -31,7 +33,7 @@ sub init()
     m.started = false
 
     m.heroTimer = CreateObject("roSGNode", "Timer")
-    m.heroTimer.duration = 0.4
+    m.heroTimer.duration = 0.25
     m.heroTimer.observeField("fire", "loadHeroDetails")
 
     m.rows.observeField("rowItemFocused", "onItemFocused")
@@ -66,7 +68,7 @@ sub configureRows()
     m.rows.rowLabelOffset = [[0, 18]]
     m.rows.rowLabelColor = "0xE6E9EDFF"
     m.rows.rowLabelFont = makeFont(32, true)
-    m.rows.rowFocusAnimationStyle = "floatingFocus"
+    m.rows.rowFocusAnimationStyle = "fixedFocusWrap"
     m.rows.itemSpacing = [0, 26]
     if m.top.kind = "movies" or m.top.kind = "series" then
         m.cardType = "poster"
@@ -212,6 +214,12 @@ sub refreshGameRows()
     end for
 end sub
 
+sub onJumpStart()
+    rf = m.rows.rowItemFocused
+    if rf = invalid or rf.Count() < 2 then return
+    m.rows.jumpToRowItem = [rf[0], 0]
+end sub
+
 sub unloadFarRows(cur as Integer)
     root = m.rows.content
     if root = invalid then return
@@ -291,6 +299,18 @@ sub onRowLoadedImpl(event as Object)
         if Left(old.id, 6) = "games:" then msg.title = "No games on right now"
         msg.addFields({ cardType: "tile", hint: true })
     end if
+    if Left(old.id, 6) = "games:" then
+        n = 0
+        for each c in old.getChildren(-1, 0)
+            if c.badge = "LIVE" then n = n + 1
+        end for
+        m.liveByRow[key] = n
+        total = 0
+        for each k in m.liveByRow
+            total = total + m.liveByRow[k]
+        end for
+        m.top.liveCount = total
+    end if
     pump()
     rf = m.rows.rowItemFocused
     if rf <> invalid and rf.Count() = 2 and rf[0] = i then onItemFocused()
@@ -334,6 +354,7 @@ end sub
 
 sub showHero(item as Object)
     m.heroTitle.text = item.title
+    m.heroTint.color = "0x00000000"
     kind = item.kind
     m.heroBar.visible = false
     m.heroBarBg.visible = false
@@ -352,6 +373,11 @@ sub showHero(item as Object)
             started = ""
             if item.badge = "LIVE" and item.startTs <> invalid and item.startTs > 0 then started = "Started " + fmtTime(item.startTs)
             m.heroMeta.text = joinParts([item.badge, item.league, started])
+            lg = UCase(asStr(item.league))
+            if lg = "NFL" then m.heroTint.color = "0x0A3A7A66"
+            if lg = "NBA" then m.heroTint.color = "0xB5122E55"
+            if lg = "NHL" then m.heroTint.color = "0x1E6FB655"
+            if lg = "MLB" then m.heroTint.color = "0x1A3F8F66"
             if item.logo1 <> invalid and item.logo1 <> "" and item.logo2 <> invalid and item.logo2 <> "" then
                 m.artTeams = [item.logo1, item.logo2, item.sep]
                 queueArt("teams", "x")

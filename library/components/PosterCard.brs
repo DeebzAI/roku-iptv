@@ -7,6 +7,7 @@ sub init()
     m.logo = m.top.findNode("logo")
     m.ring = m.top.findNode("ring")
     m.shadow = m.top.findNode("shadow")
+    m.glow = m.top.findNode("glow")
     m.progBg = m.top.findNode("progBg")
     m.prog = m.top.findNode("prog")
     m.title = m.top.findNode("title")
@@ -60,6 +61,10 @@ sub onContent()
     m.ring.height = m.h + 14
     m.card.scaleRotateCenter = [m.w / 2, m.h / 2]
     m.shadow.visible = (cardType <> "poster") ' posters skip the shadow to save memory
+    m.glow.visible = (cardType <> "poster")
+    m.glow.translation = [-26, -26]
+    m.glow.width = m.w + 52
+    m.glow.height = m.h + 52
     m.shadow.translation = [-40, -32]
     m.shadow.width = m.w + 80
     m.shadow.height = m.h + 80
@@ -209,6 +214,7 @@ sub onFocus()
     m.card.scale = [s, s]
     m.ring.opacity = fp
     m.shadow.opacity = fp
+    m.glow.opacity = 0.45 * fp
     m.title.translation = [0, m.h + 14 + m.h * 0.045 * fp]
     if fp > 0.5 then m.title.color = "0xFFFFFFFF" else m.title.color = "0x8D97A3FF"
 end sub

@@ -10,6 +10,7 @@
   <children>
     <Group id="card">
       <Poster id="shadow" uri="libpkg:/images/shadow.9.png" opacity="0" />
+      <Poster id="glow" uri="libpkg:/images/glow.9.png" opacity="0" visible="false" />
       <Poster id="bg" uri="libpkg:/images/card.9.png" />
       <!-- shown when there's no artwork (or it fails to load) -->
       <Label id="placeholder" horizAlign="center" vertAlign="center" wrap="true" maxLines="3" color="0xE6E9EDFF" />

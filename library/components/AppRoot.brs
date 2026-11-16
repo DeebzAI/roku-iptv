@@ -10,6 +10,14 @@ sub init()
     m.clock = m.top.findNode("clock")
     m.status.font = makeFont(34, false)
     m.clock.font = makeFont(30, false)
+    m.liveBadge = m.top.findNode("liveBadge")
+    m.liveBadge.font = makeFont(28, true)
+    m.splash = m.top.findNode("splash")
+    m.splashFade = m.top.findNode("splashFade")
+    m.splashFade.observeField("state", "onSplashFade")
+    m.top.findNode("splashTitle").font = makeFont(48, true)
+    m.top.findNode("splashSub").font = makeFont(28, false)
+    m.liveCount = 0
     m.top.findNode("osdChannel").font = makeFont(54, true)
     m.top.findNode("osdNow").font = makeFont(32, false)
     m.top.findNode("osdTime").font = makeFont(28, false)
@@ -65,6 +73,20 @@ sub init()
     end if
 end sub
 
+sub onLiveCount(event as Object)
+    m.liveCount = event.getData()
+    updateLiveBadge()
+end sub
+
+sub updateLiveBadge()
+    if m.liveCount > 0 and m.details = invalid and m.nav.visible then
+        m.liveBadge.text = "● " + m.liveCount.ToStr() + " live"
+        m.liveBadge.visible = true
+    else
+        m.liveBadge.visible = false
+    end if
+end sub
+
 sub updateClock()
     m.clock.text = fmtTime(CreateObject("roDateTime").AsSeconds())
 end sub
@@ -82,7 +104,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v9.6)")
+    showMessage("Signing in...  (v10.0)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -107,7 +129,9 @@ sub onLogin()
     m.status.visible = false
     lastErr = loadSetting("lastError")
     m.nav.visible = true
-    switchTab(0)
+    startTab = Val(loadSetting("lastTab"))
+    if startTab < 0 or startTab >= m.tabKinds.Count() then startTab = 0
+    switchTab(startTab)
     focusScreen()
     m.preloadTimer = CreateObject("roSGNode", "Timer")
     m.preloadTimer.duration = 2.5
@@ -131,6 +155,7 @@ function ensureScreen(i as Integer) as Object
         s.userAgent = m.ua
         s.visible = false
         s.observeField("selectedInfo", "onSelected")
+        if m.tabKinds[i] = "sports" then s.observeField("liveCount", "onLiveCount")
         m.screensHost.appendChild(s)
         m.screens[i] = s
         s.start = true
@@ -196,6 +221,7 @@ sub openDetails(item as Object)
     m.details = d
     m.nav.visible = false
     m.clock.visible = false
+    m.liveBadge.visible = false
     d.setFocus(true)
 end sub
 
@@ -205,6 +231,7 @@ sub closeDetails()
     m.details = invalid
     m.nav.visible = true
     m.clock.visible = true
+    updateLiveBadge()
     focusScreen()
 end sub
 
@@ -220,6 +247,8 @@ sub playVodRequest(req as Object)
     if req.resumeKey <> invalid then m.resumeKey = req.resumeKey
     m.startAt = 0
     if req.startAt <> invalid then m.startAt = req.startAt
+    m.nextLogo = ""
+    if req.poster <> invalid then m.nextLogo = asStr(req.poster)
     startPlayback(req.url, req.title, req.format, false)
     sub2 = req.subtitle
     if m.startAt > 0 then sub2 = "Resuming at " + fmtClock(m.startAt)
@@ -232,6 +261,10 @@ sub startPlayback(url as String, title as String, fmt as String, isLive as Boole
     ' Remember the request so a failed movie/episode can be retried differently.
     m.playReq = { url: url, title: title, fmt: fmt, live: isLive }
     m.attempt = 0
+    logo = ""
+    if m.nextLogo <> invalid then logo = m.nextLogo
+    m.nextLogo = ""
+    showSplash(title, logo)
     playAttempt()
 end sub
 
@@ -276,6 +309,7 @@ sub playLive(row as Object, index as Integer)
     m.playingLive = true
     m.resumeKey = ""
     m.startAt = 0
+    m.nextLogo = asStr(ch.HDPosterUrl)
     startPlayback(ch.url, ch.title, "hls", true)
     showOsd(ch)
 end sub
@@ -285,6 +319,7 @@ sub stopVideo()
     saveProgress()
     m.video.control = "stop"
     m.video.visible = false
+    hideSplash(false)
     hideOsd()
     ' Continue Watching rows pick up the new spot
     if m.screens[3] <> invalid then m.screens[3].refreshContinue = true
@@ -312,7 +347,30 @@ sub saveProgress()
     saveResume(m.resumeKey, posSecs, dur, m.resumeMeta)
 end sub
 
+sub showSplash(title as String, logo as String)
+    m.splashFade.control = "stop"
+    m.splash.opacity = 1.0
+    m.top.findNode("splashTitle").text = title
+    m.top.findNode("splashLogo").uri = logo
+    m.splash.visible = true
+end sub
+
+sub hideSplash(fade as Boolean)
+    if not m.splash.visible then return
+    if fade then
+        m.splashFade.control = "start"
+    else
+        m.splashFade.control = "stop"
+        m.splash.visible = false
+    end if
+end sub
+
+sub onSplashFade()
+    if m.splashFade.state = "stopped" and m.splash.opacity < 0.05 then m.splash.visible = false
+end sub
+
 sub onVideoState()
+    if m.video.state = "playing" then hideSplash(true)
     if m.video.state = "finished" then
         if m.resumeKey <> invalid and m.resumeKey <> "" then saveResume(m.resumeKey, 0, 0)
         m.resumeKey = ""
@@ -325,6 +383,7 @@ sub onVideoState()
     detail = ""
     if m.video.errorStr <> invalid then detail = m.video.errorStr
     print "IPTV playback error "; code; " "; msg; " | "; detail
+    if m.playReq <> invalid and (m.playReq.live or m.attempt >= 2) then hideSplash(false)
     if m.playReq <> invalid and not m.playReq.live and m.attempt < 2 then
         m.attempt = m.attempt + 1
         playAttempt()
@@ -566,6 +625,12 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     end if
 
     if not m.nav.visible then return false
+
+    if key = "rewind" and not m.nav.isInFocusChain() then
+        s = m.screens[m.current]
+        if s <> invalid then s.jumpStart = true
+        return true
+    end if
 
     if m.nav.isInFocusChain() then
         if key = "left" then
