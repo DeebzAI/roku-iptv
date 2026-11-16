@@ -42,24 +42,49 @@ sub startLoading()
     m.started = true
     m.status.text = "Loading..."
     m.status.visible = true
-    t = CreateObject("roSGNode", "DataTask")
-    t.xtream = m.top.xtream
-    t.userAgent = m.top.userAgent
-    t.request = { mode: "categories", kind: "sports" }
-    t.observeField("result", "onCats")
-    m.catTask = t
-    t.control = "RUN"
+    ' Channel lists come from both the Sports and Live TV tabs, minus the
+    ' team / pay-per-view / league-pass lists (those have no schedule data).
+    m.skipRe = CreateObject("roRegex", "TEAMS|PPV|LEAGUE PASS|VIP|MULTI|REPLAY|ON (FOX|CBS|NBC|ABC)|EVENT|24/7", "i")
+    m.catKinds = ["sports", "live"]
+    m.catPending = 2
+    m.catParts = {}
+    m.catTasks = {}
+    for each k in m.catKinds
+        t = CreateObject("roSGNode", "DataTask")
+        t.xtream = m.top.xtream
+        t.userAgent = m.top.userAgent
+        t.request = { mode: "categories", kind: k }
+        t.observeField("result", "onCats")
+        m.catTasks[k] = t
+        t.control = "RUN"
+    end for
 end sub
 
-sub onCats()
-    cats = m.catTask.result.cats
+sub onCats(event as Object)
+    r = event.getData()
+    kind = invalid
+    for each k in m.catKinds
+        if m.catTasks[k] <> invalid and m.catTasks[k].isSameNode(event.getRoSGNode()) then kind = k
+    end for
+    if kind = invalid or m.catParts[kind] <> invalid then return ' cached + fresh results both fire; first one wins
+    m.catParts[kind] = r.cats
+    m.catPending = m.catPending - 1
+    if m.catPending > 0 then return
     m.cats = []
-    if cats <> invalid then
-        for each c in cats
-            id = asStr(c.id)
-            if Left(id, 6) <> "games:" and Left(id, 5) <> "soon:" then m.cats.Push({ id: id, name: asStr(c.name) })
-        end for
-    end if
+    seen = {}
+    for each k in m.catKinds
+        cats = m.catParts[k]
+        if cats <> invalid then
+            for each c in cats
+                id = asStr(c.id)
+                nm = asStr(c.name)
+                if Left(id, 6) <> "games:" and Left(id, 5) <> "soon:" and seen[id] <> true and not m.skipRe.IsMatch(nm) then
+                    seen[id] = true
+                    m.cats.Push({ id: id, name: nm, kind: k })
+                end if
+            end for
+        end if
+    end for
     if m.cats.Count() = 0 then
         m.status.text = "No channels to show yet."
         return
@@ -83,7 +108,7 @@ sub loadCategory(i as Integer)
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.top.xtream
     t.userAgent = m.top.userAgent
-    t.request = { mode: "items", kind: "sports", categoryId: m.cats[i].id, rowIndex: m.reqId }
+    t.request = { mode: "items", kind: m.cats[i].kind, categoryId: m.cats[i].id, rowIndex: m.reqId }
     t.observeField("result", "onItems")
     m.itemTask = t
     t.control = "RUN"
@@ -198,7 +223,7 @@ end sub
 sub applyEpg(node as Object, entry as Object)
     lines = guideLines(entry)
     if entry.items.Count() = 0 then
-        node.nowTitle = "No guide info"
+        node.nowTitle = "No schedule from provider"
         node.nowSub = ""
         node.nextText = ""
         node.progress = 0.0
