@@ -354,7 +354,7 @@ end sub
 
 sub showHero(item as Object)
     m.heroTitle.text = item.title
-    m.heroTint.color = "0x00000000"
+    m.heroTint.opacity = 0
     kind = item.kind
     m.heroBar.visible = false
     m.heroBarBg.visible = false
@@ -374,10 +374,10 @@ sub showHero(item as Object)
             if item.badge = "LIVE" and item.startTs <> invalid and item.startTs > 0 then started = "Started " + fmtTime(item.startTs)
             m.heroMeta.text = joinParts([item.badge, item.league, started])
             lg = UCase(asStr(item.league))
-            if lg = "NFL" then m.heroTint.color = "0x0A3A7A66"
-            if lg = "NBA" then m.heroTint.color = "0xB5122E55"
-            if lg = "NHL" then m.heroTint.color = "0x1E6FB655"
-            if lg = "MLB" then m.heroTint.color = "0x1A3F8F66"
+            if lg = "NFL" then setTint("0x0A3A7AFF")
+            if lg = "NBA" then setTint("0xD0213DFF")
+            if lg = "NHL" then setTint("0x2A86D0FF")
+            if lg = "MLB" then setTint("0x2552B5FF")
             if item.logo1 <> invalid and item.logo1 <> "" and item.logo2 <> invalid and item.logo2 <> "" then
                 m.artTeams = [item.logo1, item.logo2, item.sep]
                 queueArt("teams", "x")
@@ -589,4 +589,9 @@ sub reportError(where as String, e as Object)
     sec = CreateObject("roRegistrySection", "IPTVPlayer")
     sec.Write("lastError", msg)
     sec.Flush()
+end sub
+
+sub setTint(col as String)
+    m.heroTint.blendColor = col
+    m.heroTint.opacity = 0.55
 end sub

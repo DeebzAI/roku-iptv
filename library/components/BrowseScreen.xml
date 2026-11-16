@@ -14,7 +14,7 @@
   </interface>
   <children>
     <Group id="hero">
-      <Rectangle id="heroTint" width="1920" height="620" color="0x00000000" />
+      <Poster id="heroTint" uri="libpkg:/images/tint_fade.png" width="1920" height="620" blendColor="0x000000FF" opacity="0" />
       <Poster id="heroBackdrop" translation="[520,0]" width="1400" height="788" loadDisplayMode="scaleToZoom" loadWidth="1280" loadHeight="720" visible="false" />
       <Poster id="heroPoster" translation="[1440,120]" width="330" height="495" loadDisplayMode="scaleToFit" loadWidth="330" loadHeight="495" visible="false" />
       <Poster id="heroLogo" translation="[1180,120]" width="620" height="350" loadDisplayMode="scaleToFit" loadWidth="620" loadHeight="350" visible="false" />

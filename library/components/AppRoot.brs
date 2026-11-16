@@ -79,7 +79,7 @@ sub onLiveCount(event as Object)
 end sub
 
 sub updateLiveBadge()
-    if m.liveCount > 0 and m.details = invalid and m.nav.visible then
+    if false then
         m.liveBadge.text = "● " + m.liveCount.ToStr() + " live"
         m.liveBadge.visible = true
     else
@@ -104,7 +104,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v10.1)")
+    showMessage("Signing in...  (v10.2)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -155,7 +155,6 @@ function ensureScreen(i as Integer) as Object
         s.userAgent = m.ua
         s.visible = false
         s.observeField("selectedInfo", "onSelected")
-        if m.tabKinds[i] = "sports" then s.observeField("liveCount", "onLiveCount")
         m.screensHost.appendChild(s)
         m.screens[i] = s
         s.start = true
