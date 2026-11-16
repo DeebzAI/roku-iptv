@@ -104,7 +104,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v10.5)")
+    showMessage("Signing in...  (v10.6)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -295,6 +295,9 @@ sub playAttempt()
     if sendUa and m.ua <> "" then content.HttpHeaders = ["User-Agent:" + m.ua]
     if not req.live and m.startAt <> invalid and m.startAt > 0 then content.PlayStart = m.startAt
     print "IPTV play attempt "; m.attempt; " fmt="; fmt; " ua="; sendUa; " url="; req.url
+    ' live TV: the player must not seek on replay/rewind (replay = previous channel)
+    m.video.enableTrickPlay = not req.live
+    m.video.enableUI = not req.live
     m.video.control = "stop"
     m.video.content = content
     m.video.visible = true
