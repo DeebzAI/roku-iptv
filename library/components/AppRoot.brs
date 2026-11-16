@@ -88,7 +88,7 @@ sub updateLiveBadge()
 end sub
 
 function appVersion() as String
-    return "v12.0"
+    return "v12.1"
 end function
 
 sub onSettingsAction(event as Object)
@@ -175,6 +175,11 @@ end sub
 
 ' ---------- tabs ----------
 
+function isPosterTab(i as Integer) as Boolean
+    k = m.tabKinds[i]
+    return (k = "movies" or k = "series")
+end function
+
 function ensureScreen(i as Integer) as Object
     if m.screens[i] = invalid then
         if m.tabKinds[i] = "settings" then
@@ -202,6 +207,7 @@ end function
 sub preloadTabs()
     ' only the light, channel-based tabs; poster tabs load when opened (memory)
     ' one tab at a time, 10s apart, so they don't fight over the provider's connection limit
+    if isPosterTab(m.current) then return ' never rebuild the other tabs behind Movies / TV Shows
     for i = 0 to m.tabKinds.Count() - 1
         k = m.tabKinds[i]
         if k <> "movies" and k <> "series" and k <> "guide" and k <> "settings" and m.screens[i] = invalid then
@@ -219,6 +225,17 @@ sub switchTab(i as Integer)
     if i >= n then i = 0
     for each s in m.screens
         if s <> invalid then s.visible = false
+    end for
+    ' Memory: poster tabs (Movies / TV Shows) are heavy, so while one is open every
+    ' other screen is thrown away, and leaving them throws the poster screens away.
+    heavy = isPosterTab(i)
+    for j = 0 to m.screens.Count() - 1
+        if j <> i and m.screens[j] <> invalid then
+            if heavy or isPosterTab(j) or m.tabKinds[j] = "guide" or m.tabKinds[j] = "settings" then
+                m.screensHost.removeChild(m.screens[j])
+                m.screens[j] = invalid
+            end if
+        end if
     end for
     ensureScreen(i)
     m.screens[i].visible = true

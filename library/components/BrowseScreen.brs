@@ -225,7 +225,7 @@ sub unloadFarRows(cur as Integer)
     if root = invalid then return
     for i = 0 to root.getChildCount() - 1
         key = i.ToStr()
-        if m.loaded[key] = true and Abs(i - cur) > 6 then
+        if m.loaded[key] = true and Abs(i - cur) > 3 then
             row = root.getChild(i)
             if row <> invalid and row.id <> "favs" and row.id <> "continue" then
                 row.removeChildrenIndex(row.getChildCount(), 0)
