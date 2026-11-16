@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="GuideRow" extends="Group">
+  <interface>
+    <field id="itemContent" type="node" onChange="onContent" />
+    <field id="focusPercent" type="float" onChange="onFocus" />
+    <field id="itemHasFocus" type="boolean" />
+    <field id="rowHasFocus" type="boolean" />
+    <field id="rowFocusPercent" type="float" />
+  </interface>
+  <children>
+    <Rectangle id="bg" width="1720" height="96" color="0x161B22FF" />
+    <Rectangle id="accent" width="6" height="96" color="0xFFFFFFFF" opacity="0" />
+    <Poster id="logo" translation="[28,12]" width="130" height="72" loadDisplayMode="scaleToFit" loadWidth="260" loadHeight="144" />
+    <Label id="name" translation="[180,0]" width="300" height="96" vertAlign="center" wrap="true" maxLines="2" color="0xFFFFFFFF" />
+    <Label id="nowTitle" translation="[510,10]" width="760" height="40" color="0xFFFFFFFF" />
+    <Label id="nowSub" translation="[510,54]" width="500" height="30" color="0xB8C0C8FF" />
+    <Rectangle id="progBg" translation="[1040,66]" width="230" height="6" color="0x2E3742FF" visible="false" />
+    <Rectangle id="prog" translation="[1040,66]" width="0" height="6" color="0xFFFFFFFF" visible="false" />
+    <Label id="nextText" translation="[1300,0]" width="400" height="96" vertAlign="center" wrap="true" maxLines="2" color="0x8D97A3FF" />
+  </children>
+  <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
+  <script type="text/brightscript" uri="libpkg:/components/GuideRow.brs" />
+</component>

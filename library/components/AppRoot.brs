@@ -37,9 +37,9 @@ sub init()
     m.stripList.rowFocusAnimationStyle = "floatingFocus"
     m.stripList.observeField("rowItemSelected", "onStripSelected")
 
-    m.tabNames = ["Sports", "Later Today", "Live TV", "Movies", "TV Shows"]
-    m.tabKinds = ["sports", "later", "live", "movies", "series"]
-    m.screens = [invalid, invalid, invalid, invalid, invalid]
+    m.tabNames = ["Sports", "Later Today", "Live TV", "Guide", "Movies", "TV Shows"]
+    m.tabKinds = ["sports", "later", "live", "guide", "movies", "series"]
+    m.screens = [invalid, invalid, invalid, invalid, invalid, invalid]
     m.current = 0
     m.details = invalid
     m.epgCache = {}
@@ -97,14 +97,14 @@ sub startWithUrl(url as String)
     for each s in m.screens
         if s <> invalid then m.screensHost.removeChild(s)
     end for
-    m.screens = [invalid, invalid, invalid, invalid, invalid]
+    m.screens = [invalid, invalid, invalid, invalid, invalid, invalid]
     m.nav.visible = false
     m.xtream = parseXtream(url)
     if m.xtream = invalid then
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v10.7)")
+    showMessage("Signing in...  (v11.0)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -149,7 +149,11 @@ end sub
 
 function ensureScreen(i as Integer) as Object
     if m.screens[i] = invalid then
-        s = CreateObject("roSGNode", "BrowseScreen")
+        if m.tabKinds[i] = "guide" then
+            s = CreateObject("roSGNode", "GuideScreen")
+        else
+            s = CreateObject("roSGNode", "BrowseScreen")
+        end if
         s.kind = m.tabKinds[i]
         s.xtream = m.xtream
         s.userAgent = m.ua
@@ -168,7 +172,7 @@ sub preloadTabs()
     ' one tab at a time, 10s apart, so they don't fight over the provider's connection limit
     for i = 0 to m.tabKinds.Count() - 1
         k = m.tabKinds[i]
-        if k <> "movies" and k <> "series" and m.screens[i] = invalid then
+        if k <> "movies" and k <> "series" and k <> "guide" and m.screens[i] = invalid then
             ensureScreen(i)
             m.preloadTimer.duration = 10
             m.preloadTimer.control = "start"
@@ -358,8 +362,8 @@ sub stopVideo()
     hideSplash(false)
     hideOsd()
     ' Continue Watching rows pick up the new spot
-    if m.screens[3] <> invalid then m.screens[3].refreshContinue = true
     if m.screens[4] <> invalid then m.screens[4].refreshContinue = true
+    if m.screens[5] <> invalid then m.screens[5].refreshContinue = true
     if m.details <> invalid then
         m.details.refresh = true
         m.details.setFocus(true)

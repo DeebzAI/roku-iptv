@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="GuideScreen" extends="Group">
+  <interface>
+    <field id="kind" type="string" />
+    <field id="xtream" type="assocarray" />
+    <field id="userAgent" type="string" />
+    <field id="start" type="boolean" onChange="startLoading" />
+    <field id="selectedInfo" type="assocarray" alwaysNotify="true" />
+    <field id="focusedItem" type="node" />
+    <field id="jumpStart" type="boolean" alwaysNotify="true" onChange="onJumpStart" />
+    <field id="refreshFavs" type="boolean" alwaysNotify="true" />
+    <field id="refreshContinue" type="boolean" alwaysNotify="true" />
+  </interface>
+  <children>
+    <Label id="catName" translation="[100,140]" width="1000" color="0xFFFFFFFF" />
+    <Label id="catHint" translation="[1000,150]" width="820" horizAlign="right" color="0x8D97A3FF" text="◀  ▶  change category" />
+    <Label id="colNow" translation="[610,196]" width="400" color="0x6B7580FF" text="NOW" />
+    <Label id="colNext" translation="[1400,196]" width="400" color="0x6B7580FF" text="UP NEXT" />
+    <MarkupList id="list" translation="[100,232]" itemComponentName="GuideRow" />
+    <Label id="status" translation="[0,600]" width="1920" horizAlign="center" color="0x8D97A3FF" />
+  </children>
+  <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
+  <script type="text/brightscript" uri="libpkg:/components/GuideScreen.brs" />
+</component>
