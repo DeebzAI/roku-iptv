@@ -44,7 +44,7 @@ sub refresh()
             if active then
                 pill.visible = true
                 pill.opacity = 1.0
-                lbl.color = "0x0E1116FF"
+                lbl.color = "0x0A0A0AFF"
             else
                 pill.visible = true
                 pill.opacity = 0.18
@@ -53,7 +53,7 @@ sub refresh()
         else
             pill.visible = false
             lbl.font = m.fontOff
-            lbl.color = "0x8D97A3FF"
+            lbl.color = "0xFFFFFF99"
         end if
     end for
 end sub

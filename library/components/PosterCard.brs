@@ -117,7 +117,7 @@ sub onContent()
         if badge = "LIVE" then
             m.badgeBg.blendColor = "0xE5484DFF"
         else
-            m.badgeBg.blendColor = "0x3A4552FF"
+            m.badgeBg.blendColor = "0x3A3A3CFF"
         end if
         m.league.text = c.league
         m.gameItem = c
@@ -216,5 +216,5 @@ sub onFocus()
     m.shadow.opacity = fp
     m.glow.opacity = 0.45 * fp
     m.title.translation = [0, m.h + 14 + m.h * 0.045 * fp]
-    if fp > 0.5 then m.title.color = "0xFFFFFFFF" else m.title.color = "0x8D97A3FF"
+    if fp > 0.5 then m.title.color = "0xFFFFFFFF" else m.title.color = "0xFFFFFF99"
 end sub

@@ -37,7 +37,7 @@ sub render()
     nt = c.nowTitle
     if nt = invalid or nt = "" then
         m.nowTitle.text = "Loading guide..."
-        m.nowTitle.color = "0x6B7580FF"
+        m.nowTitle.color = "0xFFFFFF59"
         m.nowSub.text = ""
         m.nextText.text = ""
         m.progBg.visible = false
@@ -57,5 +57,5 @@ end sub
 sub onFocus()
     fp = m.top.focusPercent
     m.accent.opacity = fp
-    if fp > 0.5 then m.bg.color = "0x2C3846FF" else m.bg.color = "0x161B22FF"
+    if fp > 0.5 then m.bg.color = "0xFFFFFF29" else m.bg.color = "0xFFFFFF14"
 end sub

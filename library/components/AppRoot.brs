@@ -88,7 +88,7 @@ sub updateLiveBadge()
 end sub
 
 function appVersion() as String
-    return "v11.6"
+    return "v12.0"
 end function
 
 sub onSettingsAction(event as Object)

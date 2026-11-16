@@ -66,7 +66,7 @@ sub configureRows()
     m.rows.drawFocusFeedback = false
     m.rows.showRowLabel = [true]
     m.rows.rowLabelOffset = [[0, 18]]
-    m.rows.rowLabelColor = "0xE6E9EDFF"
+    m.rows.rowLabelColor = "0xFFFFFFFF"
     m.rows.rowLabelFont = makeFont(32, true)
     m.rows.rowFocusAnimationStyle = "floatingFocus"
     m.rows.itemSpacing = [0, 26]

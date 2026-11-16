@@ -13,7 +13,7 @@
       <Poster id="glow" uri="libpkg:/images/glow.9.png" opacity="0" visible="false" />
       <Poster id="bg" uri="libpkg:/images/card.9.png" />
       <!-- shown when there's no artwork (or it fails to load) -->
-      <Label id="placeholder" horizAlign="center" vertAlign="center" wrap="true" maxLines="3" color="0xE6E9EDFF" />
+      <Label id="placeholder" horizAlign="center" vertAlign="center" wrap="true" maxLines="3" color="0xFFFFFFFF" />
       <Poster id="img" loadDisplayMode="scaleToFill" loadWidth="230" loadHeight="345" visible="false" />
       <Poster id="corners" uri="libpkg:/images/corners_poster.png" width="230" height="345" visible="false" />
       <Poster id="logo" loadDisplayMode="scaleToFit" loadWidth="288" loadHeight="142" visible="false" />
@@ -22,18 +22,18 @@
       <Group id="game" visible="false">
         <Poster id="badgeBg" uri="libpkg:/images/pill.9.png" translation="[22,20]" height="42" />
         <Label id="badge" translation="[22,20]" height="42" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />
-        <Label id="league" translation="[180,20]" width="158" height="40" horizAlign="right" vertAlign="center" color="0x8D97A3FF" />
+        <Label id="league" translation="[180,20]" width="158" height="40" horizAlign="right" vertAlign="center" color="0xFFFFFF99" />
         <Poster id="logoA" translation="[22,76]" width="48" height="48" loadDisplayMode="scaleToFit" loadWidth="96" loadHeight="96" visible="false" />
         <Poster id="logoB" translation="[22,132]" width="48" height="48" loadDisplayMode="scaleToFit" loadWidth="96" loadHeight="96" visible="false" />
         <Label id="team1" translation="[24,78]" width="312" color="0xFFFFFFFF" />
-        <Label id="team2" translation="[24,128]" width="312" color="0xC9D0D8FF" />
+        <Label id="team2" translation="[24,128]" width="312" color="0xFFFFFFFF" />
       </Group>
 
       <Rectangle id="progBg" height="8" color="0x00000099" visible="false" />
       <Rectangle id="prog" height="8" color="0xFFFFFFFF" visible="false" />
       <Poster id="ring" uri="libpkg:/images/ring.9.png" opacity="0" />
     </Group>
-    <Label id="title" color="0x8D97A3FF" wrap="true" maxLines="2" />
+    <Label id="title" color="0xFFFFFF99" wrap="true" maxLines="2" />
   </children>
   <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
   <script type="text/brightscript" uri="libpkg:/components/PosterCard.brs" />
