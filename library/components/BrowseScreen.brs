@@ -68,7 +68,7 @@ sub configureRows()
     m.rows.rowLabelOffset = [[0, 18]]
     m.rows.rowLabelColor = "0xE6E9EDFF"
     m.rows.rowLabelFont = makeFont(32, true)
-    m.rows.rowFocusAnimationStyle = "fixedFocusWrap"
+    m.rows.rowFocusAnimationStyle = "floatingFocus"
     m.rows.itemSpacing = [0, 26]
     if m.top.kind = "movies" or m.top.kind = "series" then
         m.cardType = "poster"

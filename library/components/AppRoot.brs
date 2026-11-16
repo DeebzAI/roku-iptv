@@ -88,7 +88,7 @@ sub updateLiveBadge()
 end sub
 
 function appVersion() as String
-    return "v11.4"
+    return "v11.5"
 end function
 
 sub onSettingsAction(event as Object)
@@ -96,14 +96,23 @@ sub onSettingsAction(event as Object)
     if a = "login" then
         showUrlDialog()
     else if a = "reload" then
-        url = loadSetting("playlistUrl")
-        if url <> "" then startWithUrl(url)
+        ' let the Settings screen finish its own handler before tearing everything down
+        m.reloadTimer = CreateObject("roSGNode", "Timer")
+        m.reloadTimer.duration = 0.5
+        m.reloadTimer.observeField("fire", "doReload")
+        m.reloadTimer.control = "start"
     else if a = "continue" then
         if m.screens[4] <> invalid then m.screens[4].refreshContinue = true
         if m.screens[5] <> invalid then m.screens[5].refreshContinue = true
     else if a = "favs" then
         if m.screens[0] <> invalid then m.screens[0].refreshFavs = true
     end if
+end sub
+
+sub doReload()
+    saveSetting("lastTab", "0")
+    url = loadSetting("playlistUrl")
+    if url <> "" then startWithUrl(url)
 end sub
 
 sub updateClock()
