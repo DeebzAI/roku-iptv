@@ -510,7 +510,7 @@ sub doItems(req as Object)
     end if
 
     for each e in entries
-        if count >= 300 then exit for
+        if count >= 120 then exit for
         if not (e.sd and hasGood[e.base] = true) then
             st = e.st
             sid = asStr(st.stream_id)
