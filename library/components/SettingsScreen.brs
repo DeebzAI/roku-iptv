@@ -28,6 +28,30 @@ end sub
 
 sub onPick()
     i = m.list.itemSelected
+    if i = 1 then
+        m.top.action = "login"
+        return
+    end if
+    m.pending = i
+    texts = ["Clear the saved lineup and reload everything?", "", "Clear everything in Continue Watching?", "Remove all channels from Your Channels?"]
+    dlg = CreateObject("roSGNode", "StandardMessageDialog")
+    dlg.title = "Are you sure?"
+    dlg.message = [texts[i]]
+    dlg.buttons = ["Yes", "Cancel"]
+    dlg.observeField("buttonSelected", "onConfirm")
+    m.top.getScene().dialog = dlg
+end sub
+
+sub onConfirm()
+    dlg = m.top.getScene().dialog
+    pressed = dlg.buttonSelected
+    dlg.close = true
+    m.list.setFocus(true)
+    if pressed <> 0 then return
+    runAction(m.pending)
+end sub
+
+sub runAction(i as Integer)
     sec = CreateObject("roRegistrySection", "IPTVPlayer")
     if i = 0 then
         fs = CreateObject("roFileSystem")
@@ -39,8 +63,6 @@ sub onPick()
         end if
         m.msg.text = "Cache cleared - reloading..."
         m.top.action = "reload"
-    else if i = 1 then
-        m.top.action = "login"
     else if i = 2 then
         sec.Delete("resume")
         sec.Flush()
