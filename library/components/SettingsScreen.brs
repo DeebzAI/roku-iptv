@@ -8,7 +8,7 @@ sub init()
     m.msg.font = makeFont(30, true)
     m.list.font = makeFont(32, false)
     root = CreateObject("roSGNode", "ContentNode")
-    for each t in ["Clear cache and reload", "Change IPTV login", "Clear Continue Watching", "Clear Your Channels"]
+    for each t in ["Clear cache", "Change IPTV login", "Clear Continue Watching", "Clear Your Channels"]
         root.createChild("ContentNode").title = t
     end for
     m.list.content = root
@@ -33,7 +33,7 @@ sub onPick()
         return
     end if
     m.pending = i
-    texts = ["Clear the saved lineup and reload everything?", "", "Clear everything in Continue Watching?", "Remove all channels from Your Channels?"]
+    texts = ["Clear the saved lineup? It rebuilds the next time you open the app.", "", "Clear everything in Continue Watching?", "Remove all channels from Your Channels?"]
     dlg = CreateObject("roSGNode", "StandardMessageDialog")
     dlg.title = "Are you sure?"
     dlg.message = [texts[i]]
@@ -61,8 +61,7 @@ sub runAction(i as Integer)
                 if Left(f, 5) = "cats_" then fs.Delete("cachefs:/" + f)
             end for
         end if
-        m.msg.text = "Cache cleared - reloading..."
-        m.top.action = "reload"
+        m.msg.text = "Cache cleared. Close and reopen the app to rebuild the lineup."
     else if i = 2 then
         sec.Delete("resume")
         sec.Flush()
