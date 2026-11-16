@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="SettingsScreen" extends="Group">
+  <interface>
+    <field id="kind" type="string" />
+    <field id="xtream" type="assocarray" />
+    <field id="userAgent" type="string" />
+    <field id="version" type="string" />
+    <field id="start" type="boolean" onChange="startLoading" />
+    <field id="action" type="string" alwaysNotify="true" />
+    <field id="selectedInfo" type="assocarray" alwaysNotify="true" />
+    <field id="focusedItem" type="node" />
+    <field id="jumpStart" type="boolean" alwaysNotify="true" />
+    <field id="refreshFavs" type="boolean" alwaysNotify="true" />
+    <field id="refreshContinue" type="boolean" alwaysNotify="true" />
+  </interface>
+  <children>
+    <Label id="heading" translation="[100,150]" width="1000" text="Settings" color="0xFFFFFFFF" />
+    <LabelList id="list" translation="[100,250]" itemSize="[900,72]" numRows="6"
+      vertFocusAnimationStyle="floatingFocus" color="0xD0D6DCFF" focusedColor="0x0E1116FF"
+      focusBitmapUri="libpkg:/images/pill.9.png" textHorizOffset="28" />
+    <Label id="info" translation="[1100,250]" width="720" wrap="true" lineSpacing="10" color="0x8D97A3FF" />
+    <Label id="msg" translation="[100,760]" width="1000" color="0x7DD87FFF" />
+  </children>
+  <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
+  <script type="text/brightscript" uri="libpkg:/components/SettingsScreen.brs" />
+</component>

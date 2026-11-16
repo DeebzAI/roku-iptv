@@ -1,6 +1,6 @@
 sub init()
     m.tabs = m.top.findNode("tabs")
-    m.tabW = 200
+    m.tabW = 176
     m.pills = []
     m.labels = []
     m.fontOn = makeFont(28, true)

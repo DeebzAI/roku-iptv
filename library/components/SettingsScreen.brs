@@ -1,0 +1,55 @@
+' Settings: a few maintenance actions plus version info.
+
+sub init()
+    m.list = m.top.findNode("list")
+    m.msg = m.top.findNode("msg")
+    m.top.findNode("heading").font = makeFont(44, true)
+    m.top.findNode("info").font = makeFont(28, false)
+    m.msg.font = makeFont(30, true)
+    m.list.font = makeFont(32, false)
+    root = CreateObject("roSGNode", "ContentNode")
+    for each t in ["Clear cache and reload", "Change IPTV login", "Clear Continue Watching", "Clear Your Channels"]
+        root.createChild("ContentNode").title = t
+    end for
+    m.list.content = root
+    m.list.observeField("itemSelected", "onPick")
+    m.top.observeField("focusedChild", "onFocusChanged")
+end sub
+
+sub onFocusChanged()
+    if m.top.hasFocus() then m.list.setFocus(true)
+end sub
+
+sub startLoading()
+    user = ""
+    if m.top.xtream <> invalid then user = asStr(m.top.xtream.user)
+    m.top.findNode("info").text = "Version " + m.top.version + Chr(10) + "Signed in as " + user + Chr(10) + Chr(10) + "Keys while watching live TV:" + Chr(10) + "  OK  channel strip" + Chr(10) + "  Up / Down  change channel" + Chr(10) + "  Left or Replay  previous channel" + Chr(10) + "  *  add to Your Channels"
+end sub
+
+sub onPick()
+    i = m.list.itemSelected
+    sec = CreateObject("roRegistrySection", "IPTVPlayer")
+    if i = 0 then
+        fs = CreateObject("roFileSystem")
+        files = fs.ListDir("cachefs:/")
+        if files <> invalid then
+            for each f in files
+                if Left(f, 5) = "cats_" then fs.Delete("cachefs:/" + f)
+            end for
+        end if
+        m.msg.text = "Cache cleared - reloading..."
+        m.top.action = "reload"
+    else if i = 1 then
+        m.top.action = "login"
+    else if i = 2 then
+        sec.Delete("resume")
+        sec.Flush()
+        m.msg.text = "Continue Watching cleared"
+        m.top.action = "continue"
+    else if i = 3 then
+        sec.Delete("favs")
+        sec.Flush()
+        m.msg.text = "Your Channels cleared"
+        m.top.action = "favs"
+    end if
+end sub
