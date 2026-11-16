@@ -104,7 +104,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v10.4)")
+    showMessage("Signing in...  (v10.5)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -309,6 +309,13 @@ sub playLive(row as Object, index as Integer)
     if index >= count then index = 0
     ch = row.getChild(index)
     if ch.kind <> "live" then return
+    ' remember the channel we're leaving (for the replay button)
+    if m.playingLive and m.zapRow <> invalid then
+        cur = m.zapRow.getChild(m.zapIndex)
+        if cur <> invalid and cur.id <> ch.id then
+            m.prevCh = { row: m.zapRow, index: m.zapIndex, id: cur.id, url: cur.url, title: cur.title, logo: asStr(cur.HDPosterUrl) }
+        end if
+    end if
     m.zapRow = row
     m.zapIndex = index
     m.playingLive = true
@@ -317,6 +324,27 @@ sub playLive(row as Object, index as Integer)
     m.nextLogo = asStr(ch.HDPosterUrl)
     startPlayback(ch.url, ch.title, "hls", true)
     showOsd(ch)
+end sub
+
+sub goPrevChannel()
+    p = m.prevCh
+    if p = invalid then
+        banner("No previous channel yet")
+        return
+    end if
+    ' same row still loaded and unchanged -> normal zap
+    c = invalid
+    if p.row <> invalid then c = p.row.getChild(p.index)
+    if c <> invalid and c.id = p.id then
+        playLive(p.row, p.index)
+        return
+    end if
+    ' otherwise play it directly
+    cur = m.zapRow.getChild(m.zapIndex)
+    if cur <> invalid then m.prevCh = { row: m.zapRow, index: m.zapIndex, id: cur.id, url: cur.url, title: cur.title, logo: asStr(cur.HDPosterUrl) }
+    m.nextLogo = p.logo
+    startPlayback(p.url, p.title, "hls", true)
+    showOsdText(p.title, "")
 end sub
 
 sub stopVideo()
@@ -587,7 +615,10 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             return true
         end if
         if m.playingLive then
-            if key = "up" then
+            if key = "replay" then
+                goPrevChannel()
+                return true
+            else if key = "up" then
                 playLive(m.zapRow, m.zapIndex - 1)
                 return true
             else if key = "down" then
