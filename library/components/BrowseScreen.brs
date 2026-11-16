@@ -212,6 +212,22 @@ sub refreshGameRows()
     end for
 end sub
 
+sub unloadFarRows(cur as Integer)
+    root = m.rows.content
+    if root = invalid then return
+    for i = 0 to root.getChildCount() - 1
+        key = i.ToStr()
+        if m.loaded[key] = true and Abs(i - cur) > 6 then
+            row = root.getChild(i)
+            if row <> invalid and row.id <> "favs" and row.id <> "continue" then
+                row.removeChildrenIndex(row.getChildCount(), 0)
+                addSkeletons(row)
+                m.loaded.Delete(key)
+            end if
+        end if
+    end for
+end sub
+
 ' ---------- lazy row loading ----------
 
 sub queueRow(i as Integer)
@@ -302,6 +318,7 @@ sub onItemFocusedImpl()
     rf = m.rows.rowItemFocused
     if rf = invalid or rf.Count() < 2 then return
     queueRow(rf[0] + 1)
+    unloadFarRows(rf[0])
     if rf[0] < 0 or rf[1] < 0 then return
     item = itemAt(rf[0], rf[1])
     if item = invalid then return
@@ -493,6 +510,7 @@ sub onEpgImpl(event as Object)
     m.pendingInfo.Delete("epg" + r.streamId)
     m.tasks.Delete("epg" + r.streamId)
     entry = { fetched: CreateObject("roDateTime").AsSeconds(), items: r.items }
+    if m.epgCache.Count() > 60 then m.epgCache = {}
     m.epgCache[r.streamId] = entry
     if m.heroItem <> invalid and m.heroItem.kind = "live" and m.heroItem.id = r.streamId then showGuide(entry)
 end sub
@@ -509,6 +527,7 @@ sub onVodInfoImpl(event as Object)
     r = event.getData()
     m.pendingInfo.Delete("vod" + r.id)
     m.tasks.Delete("vod" + r.id)
+    if m.infoCache.Count() > 60 then m.infoCache = {}
     m.infoCache[r.id] = r
     if m.heroItem <> invalid and m.heroItem.kind = "movie" and m.heroItem.id = r.id then
         applyInfo(m.heroItem, r)

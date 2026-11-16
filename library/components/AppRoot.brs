@@ -82,7 +82,7 @@ sub startWithUrl(url as String)
         showMessage("This app needs an Xtream Codes login link." + Chr(10) + "Press * to enter it.")
         return
     end if
-    showMessage("Signing in...  (v9.5)")
+    showMessage("Signing in...  (v9.6)")
     t = CreateObject("roSGNode", "DataTask")
     t.xtream = m.xtream
     t.request = { mode: "login" }
@@ -429,6 +429,7 @@ sub onGuideResult(event as Object)
     r = event.getData()
     m.pending.Delete(r.streamId)
     entry = { fetched: CreateObject("roDateTime").AsSeconds(), items: r.items }
+    if m.epgCache.Count() > 60 then m.epgCache = {}
     m.epgCache[r.streamId] = entry
     if m.osd.visible and r.streamId = m.osdChannelId then renderOsd(entry)
 end sub
