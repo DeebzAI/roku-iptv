@@ -16,6 +16,10 @@ sub init()
     m.prefixRe = CreateObject("roRegex", "^(US|USA|UK|CA)\s*[:|\-]\s*", "i")
     m.qualityRe = CreateObject("roRegex", "(^|\s|\(|\[)(SD|HD|FHD|UHD|4K|HEVC|H265|RAW|HQ|LQ|1080P?|720P?|60FPS|50FPS)(?=$|\s|\)|\])", "i")
     m.spacesRe = CreateObject("roRegex", "[\s\(\)\[\]]+", "")
+    ' movie / show title cleanup: "|EN| ", "EN - ", "[US] ", "NF | ", trailing "(4K)" / "[HD]" ...
+    m.titleLangRe = CreateObject("roRegex", "^[\s\|\[\(]*(EN|ENG|EN-US|MULTI)[\s\|:\-\]\)]+", "i")
+    m.titleTagRe = CreateObject("roRegex", "^[\[\(]\s*(EN|ENG|US|USA|UK|NF|AMZ|HBO|DSNP|ATVP|VOD|4K|FHD|UHD|HD|MULTI)\s*[\]\)]\s*|^(US|USA|NF|AMZ|HBO|DSNP|ATVP|VOD|4K|FHD|UHD)\s*[\|:]\s*", "i")
+    m.titleTailRe = CreateObject("roRegex", "\s*[\[\(]\s*(HD|FHD|UHD|4K|MULTI|SUB|DUB|MULTI-SUB|[0-9]{3,4}p)\s*[\]\)]\s*$|\s+-\s*(4K|FHD|UHD|HD|[0-9]{3,4}p)\s*$", "i")
     m.notEventCatRe = CreateObject("roRegex", "SPORT\+|FANDUEL|REPLAY|TEAMS|NETWORK", "i")
     m.vsRe = CreateObject("roRegex", "\s(VS\.?|V\.?|AT)\s|\S\s?@\s?\S|\b(SNF|MNF|TNF)\b", "i")
     m.noEventRe = CreateObject("roRegex", "NO EVENT|NO GAME|OFF ?AIR|NO STREAM|STAND ?BY|COMING SOON", "i")
@@ -324,6 +328,22 @@ function titleCase(s as String) as String
 end function
 
 ' Channel name cleanup: drop "USA: " / "US| " / "┃US┃ " prefixes.
+' Movie / show titles: drop language tags and box characters, keep the real name and year.
+function cleanMediaTitle(raw as String) as String
+    t = stripOddChars(raw)
+    for i = 1 to 3
+        if m.titleLangRe.IsMatch(t) then t = m.titleLangRe.Replace(t, "")
+        if m.titleTagRe.IsMatch(t) then t = m.titleTagRe.Replace(t, "")
+        t = t.Trim()
+    end for
+    for i = 1 to 2
+        if m.titleTailRe.IsMatch(t) then t = m.titleTailRe.Replace(t, "")
+    end for
+    t = t.Trim()
+    if t = "" then t = raw.Trim()
+    return t
+end function
+
 function cleanChannelName(raw as String) as String
     name = stripBoxPrefix(raw)
     name = stripOddChars(name)
@@ -436,7 +456,7 @@ sub doItems(req as Object)
                 name = asStr(st.name).Trim()
                 if name <> "" and not m.ukRe.IsMatch(Left(name, 6)) then
                     item = row.createChild("ContentNode")
-                    item.title = name
+                    item.title = cleanMediaTitle(name)
                     if kind = "movies" then
                         sid = asStr(st.stream_id)
                         ext = asStr(st.container_extension)

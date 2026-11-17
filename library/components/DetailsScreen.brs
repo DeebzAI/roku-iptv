@@ -265,7 +265,10 @@ sub onEpisodeSelected()
     list = m.seriesData.episodes[m.currentSeason]
     e = list[m.episodes.itemSelected]
     if e = invalid then return
-    m.top.playRequest = { url: e.url, title: e.title, format: e.fmt, subtitle: m.top.item.title + "  ·  Season " + m.currentSeason, resumeKey: "e" + e.id, startAt: getResume("e" + e.id), poster: m.top.item.HDPosterUrl }
+    shown = m.episodes.content.getChild(m.episodes.itemSelected)
+    epTitle = e.title
+    if shown <> invalid and shown.title <> "" then epTitle = shown.title
+    m.top.playRequest = { url: e.url, title: epTitle, format: e.fmt, subtitle: m.top.item.title + "  ·  Season " + m.currentSeason, resumeKey: "e" + e.id, startAt: getResume("e" + e.id), poster: m.top.item.HDPosterUrl }
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
