@@ -8,7 +8,7 @@
     <field id="rowHasFocus" type="boolean" />
   </interface>
   <children>
-    <Group id="card" translation="[0,26]">
+    <Group id="card" translation="[24,26]">
       <Rectangle id="bg" width="230" height="345" color="0xFFFFFF14" />
       <Label id="placeholder" translation="[16,16]" width="198" height="313" horizAlign="center" vertAlign="center" wrap="true" maxLines="5" color="0xFFFFFF99" />
       <Poster id="img" width="230" height="345" loadDisplayMode="scaleToFill" loadWidth="230" loadHeight="345" visible="false" />
@@ -16,7 +16,7 @@
       <Rectangle id="prog" translation="[16,321]" width="0" height="8" color="0xFFFFFFFF" visible="false" />
       <Poster id="ring" uri="libpkg:/images/ring.9.png" translation="[-7,-7]" width="244" height="359" opacity="0" />
     </Group>
-    <Label id="title" translation="[0,385]" width="230" wrap="true" maxLines="2" color="0xFFFFFF99" />
+    <Label id="title" translation="[24,385]" width="230" wrap="true" maxLines="2" color="0xFFFFFF99" />
   </children>
   <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
   <script type="text/brightscript" uri="libpkg:/components/PosterLite.brs" />

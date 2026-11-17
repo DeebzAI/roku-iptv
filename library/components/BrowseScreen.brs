@@ -73,7 +73,9 @@ sub configureRows()
     if m.top.kind = "movies" or m.top.kind = "series" then
         m.cardType = "poster"
         m.rows.itemComponentName = "PosterLite"
-        m.rows.itemSize = [1820, 496]
+        m.rows.translation = [76, 585] ' 24px of room on the left for the focus ring
+        m.rows.rowLabelOffset = [[24, 18]]
+        m.rows.itemSize = [1844, 496]
         m.rows.rowItemSize = [[230, 345]]
         m.rows.rowItemSpacing = [[34, 0]]
     else
