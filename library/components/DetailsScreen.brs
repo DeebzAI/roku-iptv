@@ -16,6 +16,8 @@ sub init()
     m.seasons = m.top.findNode("seasons")
     m.episodes = m.top.findNode("episodes")
     m.status = m.top.findNode("status")
+    m.cast = m.top.findNode("cast")
+    m.cast.font = makeFont(26, false)
     m.title.font = makeFont(62, true)
     m.meta.font = makeFont(30, false)
     m.plot.font = makeFont(30, false)
@@ -45,9 +47,11 @@ end sub
 sub onItem()
     item = m.top.item
     m.mode = item.kind
-    m.title.text = item.title
+    m.title.text = cleanTitle(item.title)
     m.meta.text = ""
     m.plot.text = item.Description
+    m.cast.visible = false
+    layoutFor(item.kind)
     if item.backdrop <> invalid and item.backdrop <> "" then
         showBackdrop(item.backdrop)
     else
@@ -69,6 +73,44 @@ sub onItem()
     t.observeField("result", "onInfo")
     m.task = t
     t.control = "RUN"
+end sub
+
+' Provider titles often carry tags like "|EN|" (and box characters the font lacks).
+function cleanTitle(s as Dynamic) as String
+    if s = invalid then return ""
+    out = ""
+    for i = 1 to Len(s)
+        ch = Mid(s, i, 1)
+        code = Asc(ch)
+        if code < &h2000 or code = &h2013 or code = &h2014 or code = &h2018 or code = &h2019 or code = &h201C or code = &h201D or code = &h2022 then
+            out = out + ch
+        else
+            out = out + " "
+        end if
+    end for
+    out = out.Trim()
+    re = CreateObject("roRegex", "^\|?\s*(EN|ENG|US|USA|UK|MULTI)\s*\|?\s+", "i")
+    if re.IsMatch(out) then out = re.Replace(out, "")
+    re2 = CreateObject("roRegex", "^\|?\s*(EN|ENG|US|USA|UK)\s*\|\s*", "i")
+    out = re2.Replace(out, "")
+    return out.Trim()
+end function
+
+' Movies: text sits low on the left over the artwork. Shows keep the list layout.
+sub layoutFor(kind as String)
+    if kind = "movie" then
+        m.title.translation = [100, 330]
+        m.title.height = 150
+        m.title.vertAlign = "bottom"
+        m.title.wrap = true
+        m.title.maxLines = 2
+        m.meta.translation = [100, 498]
+        m.plot.translation = [100, 550]
+        m.plot.height = 140
+        m.plot.maxLines = 4
+        m.playBtn.translation = [100, 790]
+        m.restartBtn.translation = [470, 790]
+    end if
 end sub
 
 sub showBackdrop(url as String)
@@ -95,7 +137,11 @@ sub onInfo()
     if r.plot <> invalid and r.plot <> "" then m.plot.text = r.plot
     if r.backdrop <> invalid and r.backdrop <> "" then showBackdrop(r.backdrop)
     if m.mode = "movie" then
-        m.meta.text = joinParts([r.year, r.genre, r.duration, r.quality, r.size, ratingText(r.rating)])
+        m.meta.text = joinParts([r.year, r.genre, r.duration, r.quality, ratingText(r.rating)])
+        if r.cast <> invalid and r.cast <> "" then
+            m.cast.text = "Starring  " + r.cast
+            m.cast.visible = true
+        end if
         return
     end if
 
@@ -186,7 +232,7 @@ sub refreshResume()
     if m.mode = "movie" then
         posSecs = getResume("m" + item.id)
         if posSecs > 0 then
-            m.playLabel.text = "Resume  (" + fmtClock(posSecs) + ")"
+            m.playLabel.text = "Resume from " + fmtClock(posSecs)
             m.restartBtn.visible = true
         else
             m.playLabel.text = "Play"
