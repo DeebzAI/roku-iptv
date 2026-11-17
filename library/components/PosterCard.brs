@@ -144,7 +144,8 @@ sub onContent()
 
     m.title.width = m.w
     m.title.text = c.title
-    m.title.translation = [0, m.h + 14]
+    m.card.translation = [24, 16]
+    m.title.translation = [24, m.h + 30]
     onFocus()
 end sub
 
@@ -215,6 +216,6 @@ sub onFocus()
     m.ring.opacity = fp
     m.shadow.opacity = fp
     m.glow.opacity = 0.45 * fp
-    m.title.translation = [0, m.h + 14 + m.h * 0.045 * fp]
+    m.title.translation = [24, m.h + 30 + m.h * 0.045 * fp]
     if fp > 0.5 then m.title.color = "0xFFFFFFFF" else m.title.color = "0x8E8E93FF"
 end sub

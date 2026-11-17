@@ -82,9 +82,11 @@ sub configureRows()
         m.rows.rowItemSpacing = [[34, 0]]
     else
         m.cardType = "tile"
-        m.rows.itemSize = [1820, 330]
-        m.rows.rowItemSize = [[360, 202]]
-        m.rows.rowItemSpacing = [[40, 0]]
+        m.rows.translation = [76, 585] ' room on the left for the focus ring
+        m.rows.rowLabelOffset = [[24, 18]]
+        m.rows.itemSize = [1844, 330]
+        m.rows.rowItemSize = [[384, 218]]
+        m.rows.rowItemSpacing = [[16, 0]]
     end if
 end sub
 
@@ -360,6 +362,7 @@ end sub
 
 sub showHero(item as Object)
     m.heroTitle.text = item.title
+    if item.hint = true then m.heroTitle.text = ""
     m.heroTint.opacity = 0
     kind = item.kind
     m.heroBar.visible = false

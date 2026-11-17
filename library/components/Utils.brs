@@ -33,6 +33,41 @@ function makeFont(size as Integer, bold as Boolean) as Object
     return f
 end function
 
+' Keep only characters the font can draw (Latin + common punctuation); tidy leftover separators.
+function latinOnly(s as String) as String
+    out = ""
+    changed = false
+    for i = 1 to Len(s)
+        ch = Mid(s, i, 1)
+        code = Asc(ch)
+        if code < &h250 or code = &h2013 or code = &h2014 or code = &h2018 or code = &h2019 or code = &h201C or code = &h201D or code = &h2022 or code = &h2026 then
+            out = out + ch
+        else
+            out = out + " "
+            changed = true
+        end if
+    end for
+    if changed then
+        out = CreateObject("roRegex", "\s+", "").ReplaceAll(out, " ")
+        out = CreateObject("roRegex", "(\s*,)+", "").ReplaceAll(out, ",")
+        out = CreateObject("roRegex", "^[\s,;|/\-]+|[\s,;|/\-]+$", "").ReplaceAll(out, "")
+    end if
+    return out.Trim()
+end function
+
+' Saved / raw movie titles: drop odd characters and leading "EN" style tags.
+function tidyTitle(raw as Dynamic) as String
+    if raw = invalid then return ""
+    s = latinOnly(raw)
+    re = CreateObject("roRegex", "^[\s\|\[\(]*(EN|ENG|EN-US|MULTI)[\s\|:\-\]\)]+", "i")
+    for i = 1 to 3
+        if re.IsMatch(s) then s = re.Replace(s, "")
+    end for
+    s = s.Trim()
+    if s = "" then s = latinOnly(raw)
+    return s
+end function
+
 function fmtTime(ts as Integer) as String
     dt = CreateObject("roDateTime")
     dt.FromSeconds(ts)
@@ -232,7 +267,7 @@ function continueList(prefix as String) as Object
     for each k in t
         e = t[k]
         if Left(k, 1) = prefix and e.u <> invalid and e.u <> "" then
-            list.Push({ key: k, title: e.n, poster: e.i, url: e.u, fmt: e.f, sub: e.s, pos: e.p, dur: e.d, t: e.t, sortKey: 0 - e.t })
+            list.Push({ key: k, title: tidyTitle(e.n), poster: e.i, url: e.u, fmt: e.f, sub: e.s, pos: e.p, dur: e.d, t: e.t, sortKey: 0 - e.t })
         end if
     end for
     list.SortBy("sortKey")

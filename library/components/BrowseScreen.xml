@@ -17,7 +17,7 @@
       <Poster id="heroWash" width="1920" height="1080" loadDisplayMode="scaleToFill" loadWidth="32" loadHeight="18" opacity="0.5" visible="false" />
       <Poster id="heroTint" uri="libpkg:/images/tint_fade.png" width="1920" height="620" blendColor="0x000000FF" opacity="0" />
       <Poster id="heroBackdrop" translation="[520,0]" width="1400" height="788" loadDisplayMode="scaleToZoom" loadWidth="960" loadHeight="540" visible="false" />
-      <Poster id="heroPoster" translation="[1440,120]" width="330" height="495" loadDisplayMode="scaleToFit" loadWidth="330" loadHeight="495" visible="false" />
+      <Poster id="heroPoster" translation="[1470,150]" width="300" height="450" loadDisplayMode="scaleToFit" loadWidth="300" loadHeight="450" visible="false" />
       <Poster id="heroLogo" translation="[1180,120]" width="620" height="350" loadDisplayMode="scaleToFit" loadWidth="620" loadHeight="350" visible="false" />
       <Group id="heroTeams" visible="false">
         <Poster id="heroTeamA" translation="[1070,110]" width="360" height="360" loadDisplayMode="scaleToFit" loadWidth="360" loadHeight="360" />
@@ -25,7 +25,7 @@
         <Poster id="heroTeamB" translation="[1490,110]" width="360" height="360" loadDisplayMode="scaleToFit" loadWidth="360" loadHeight="360" />
       </Group>
       <Poster id="heroFade" width="1920" height="1080" loadDisplayMode="scaleToFill" uri="libpkg:/images/hero_fade_home.png" />
-      <Label id="heroTitle" translation="[100,160]" width="1150" wrap="true" maxLines="2" color="0xFFFFFFFF" />
+      <Label id="heroTitle" translation="[100,120]" width="1150" height="170" vertAlign="bottom" wrap="true" maxLines="2" color="0xFFFFFFFF" />
       <Label id="heroMeta" translation="[100,300]" width="1150" color="0x8E8E93FF" />
       <Rectangle id="heroBarBg" translation="[100,352]" width="420" height="6" color="0xFFFFFF26" visible="false" />
       <Rectangle id="heroBar" translation="[100,352]" width="0" height="6" color="0xFFFFFFFF" visible="false" />

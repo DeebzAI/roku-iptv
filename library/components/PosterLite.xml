@@ -17,7 +17,7 @@
       <Rectangle id="prog" translation="[16,321]" width="0" height="8" color="0xFFFFFFFF" visible="false" />
       <Poster id="ring" uri="libpkg:/images/ring.9.png" translation="[-7,-7]" width="244" height="359" opacity="0" />
     </Group>
-    <Label id="title" translation="[24,385]" width="230" wrap="true" maxLines="2" color="0x8E8E93FF" />
+    <Label id="title" translation="[24,385]" width="230" height="72" wrap="true" maxLines="2" color="0x8E8E93FF" />
   </children>
   <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
   <script type="text/brightscript" uri="libpkg:/components/PosterLite.brs" />
