@@ -872,7 +872,7 @@ end function
 sub doVodInfo(req as Object)
     data = getJson(apiUrl("get_vod_info") + "&vod_id=" + req.id, m.top.userAgent)
     out = { id: req.id, plot: "", year: "", genre: "", duration: "", rating: "", backdrop: "", cast: "", quality: "", size: "" }
-    if data <> invalid and data.info <> invalid then
+    if type(data) = "roAssociativeArray" and type(data.info) = "roAssociativeArray" then
         i = data.info
         out.plot = asStr(i.plot)
         if out.plot = "" then out.plot = asStr(i.description)
@@ -921,11 +921,11 @@ sub doSeriesInfo(req as Object)
     data = getJson(apiUrl("get_series_info") + "&series_id=" + req.id, m.top.userAgent)
     c = m.top.xtream
     out = { id: req.id, plot: "", year: "", genre: "", rating: "", backdrop: "", seasons: [], episodes: {} }
-    if data = invalid then
+    if type(data) <> "roAssociativeArray" then
         m.top.result = out
         return
     end if
-    if data.info <> invalid then
+    if type(data.info) = "roAssociativeArray" then
         i = data.info
         out.plot = asStr(i.plot)
         out.year = Left(asStr(i.releaseDate), 4)
@@ -960,7 +960,7 @@ sub doSeriesInfo(req as Object)
                 eid = asStr(e.id)
                 title = asStr(e.title)
                 dur = ""
-                if e.info <> invalid then dur = fmtMinutes(e.info.duration)
+                if type(e.info) = "roAssociativeArray" then dur = fmtMinutes(e.info.duration)
                 list.Push({ id: eid, num: asStr(e.episode_num), title: title, duration: dur, url: c.base + "/series/" + c.user + "/" + c.pass + "/" + eid + "." + ext, fmt: formatFor(ext) })
             end for
         end if
