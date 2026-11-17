@@ -29,10 +29,7 @@ sub init()
     m.plot.font = makeFont(30, false)
     m.status.font = makeFont(28, false)
     m.top.findNode("playLabel").font = makeFont(32, true)
-    m.seasons.font = makeFont(30, true)
-    m.seasons.focusedFont = makeFont(30, true)
-    m.episodes.font = makeFont(30, false)
-    m.episodes.focusedFont = makeFont(30, true)
+    m.listFade = m.top.findNode("listFade")
     m.mode = "movie"
     m.seriesData = invalid
     m.seasons.observeField("itemFocused", "onSeasonFocused")
@@ -104,6 +101,22 @@ end function
 
 ' Movies: text sits low on the left over the artwork. Shows keep the list layout.
 sub layoutFor(kind as String)
+    if kind <> "movie" then
+        ' shows: title block on top, season picker + episode list below
+        m.title.translation = [100, 80]
+        m.title.height = 140
+        m.title.vertAlign = "bottom"
+        m.title.wrap = true
+        m.title.maxLines = 2
+        m.title.width = 1000
+        m.meta.translation = [100, 232]
+        m.stars.translation = [100, 286]
+        m.plot.translation = [100, 336]
+        m.plot.width = 1000
+        m.plot.height = 110
+        m.plot.maxLines = 3
+        m.listFade.visible = true
+    end if
     if kind = "movie" then
         m.title.translation = [100, 330]
         m.title.height = 150
@@ -170,7 +183,8 @@ sub onInfo()
         return
     end if
 
-    m.meta.text = joinParts([r.year, r.genre, ratingText(r.rating)])
+    m.meta.text = joinParts([r.year, r.genre])
+    showStars(r.rating)
     m.seriesData = r
     if r.seasons.Count() = 0 then
         m.status.text = "No episodes found for this show."
@@ -181,7 +195,9 @@ sub onInfo()
     for each s in r.seasons
         c = content.createChild("ContentNode")
         c.title = "Season " + s
+        c.addFields({ sel: false })
     end for
+    content.getChild(0).sel = true
     m.seasons.content = content
     m.seasons.visible = true
     m.episodes.visible = true
@@ -198,19 +214,38 @@ sub fillEpisodes(idx as Integer)
     if idx < 0 or idx >= m.seriesData.seasons.Count() then return
     key = m.seriesData.seasons[idx]
     m.currentSeason = key
+    ' mark the current season (stays lit while you're in the episode list)
+    sc = m.seasons.content
+    if sc <> invalid then
+        for i = 0 to sc.getChildCount() - 1
+            sc.getChild(i).sel = (i = idx)
+        end for
+    end if
     list = m.seriesData.episodes[key]
     content = CreateObject("roSGNode", "ContentNode")
     saved = resumeTable() ' read once, not once per episode
+    showName = LCase(cleanTitle(m.top.item.title))
+    junk = CreateObject("roRegex", "\(\d{4}\)|S\d+\s*E\d+\s*[-:]?\s*", "i")
+    n = 0
     for each e in list
+        n = n + 1
         c = content.createChild("ContentNode")
-        label = e.title
-        if e.num <> "" then label = e.num + ".   " + label
-        if e.duration <> "" then label = label + "   (" + e.duration + ")"
-        posSecs = 0
+        t = cleanTitle(e.title)
+        ' drop the repeated show name, the year and the S01E01 code
+        if showName <> "" and Left(LCase(t), Len(showName)) = showName then t = Mid(t, Len(showName) + 1)
+        t = junk.ReplaceAll(t, "")
+        t = t.Trim()
+        while Left(t, 1) = "-" or Left(t, 1) = ":" or Left(t, 1) = " "
+            t = Mid(t, 2)
+        end while
+        if t = "" then t = "Episode " + n.ToStr()
+        c.title = t
+        numText = e.num
+        if numText = "" then numText = n.ToStr()
+        progress = 0.0
         hit = saved["e" + e.id]
-        if hit <> invalid and hit.p <> invalid then posSecs = hit.p
-        if posSecs > 0 then label = label + "   ·  resume at " + fmtClock(posSecs)
-        c.title = label
+        if hit <> invalid and hit.p <> invalid and hit.d <> invalid and hit.d > 0 then progress = hit.p / hit.d
+        c.addFields({ epNum: numText, dur: e.duration, progress: progress })
     end for
     m.episodes.content = content
 end sub

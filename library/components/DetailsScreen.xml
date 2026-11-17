@@ -39,12 +39,9 @@
       <Label id="restartLabel" width="300" height="80" horizAlign="center" vertAlign="center" text="Start Over" color="0x1A1A1AFF" />
     </Group>
 
-    <LabelList id="seasons" translation="[100,540]" itemSize="[300,62]" numRows="7" visible="false"
-      vertFocusAnimationStyle="floatingFocus" color="0x8E8E93FF" focusedColor="0x1A1A1AFF"
-      focusBitmapUri="libpkg:/images/pill.9.png" focusFootprintBitmapUri="libpkg:/images/card.9.png" />
-    <LabelList id="episodes" translation="[440,540]" itemSize="[1380,62]" numRows="7" visible="false"
-      vertFocusAnimationStyle="floatingFocus" color="0xFFFFFFFF" focusedColor="0x1A1A1AFF"
-      focusBitmapUri="libpkg:/images/pill.9.png" />
+    <Poster id="listFade" uri="libpkg:/images/up_fade.png" translation="[0,380]" width="1920" height="700" loadDisplayMode="scaleToFill" visible="false" />
+    <MarkupList id="seasons" translation="[100,500]" itemComponentName="SeasonRow" itemSize="[270,64]" itemSpacing="[0,8]" numRows="6" visible="false" drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
+    <MarkupList id="episodes" translation="[420,500]" itemComponentName="EpisodeRow" itemSize="[1400,72]" itemSpacing="[0,6]" numRows="6" visible="false" drawFocusFeedback="false" vertFocusAnimationStyle="floatingFocus" />
     <Label id="status" translation="[100,560]" width="1200" color="0x8E8E93FF" />
   </children>
   <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />

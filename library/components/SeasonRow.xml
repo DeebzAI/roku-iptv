@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="SeasonRow" extends="Group">
+  <interface>
+    <field id="itemContent" type="node" onChange="onContent" />
+    <field id="focusPercent" type="float" onChange="render" />
+    <field id="itemHasFocus" type="boolean" />
+    <field id="rowFocusPercent" type="float" />
+    <field id="rowHasFocus" type="boolean" />
+  </interface>
+  <children>
+    <Poster id="pill" uri="libpkg:/images/pill.9.png" width="270" height="64" opacity="0" />
+    <Label id="name" translation="[0,0]" width="270" height="64" horizAlign="center" vertAlign="center" color="0x8E8E93FF" />
+  </children>
+  <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
+  <script type="text/brightscript" uri="libpkg:/components/SeasonRow.brs" />
+</component>
