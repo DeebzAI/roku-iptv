@@ -24,16 +24,8 @@ function makeFont(size as Integer, bold as Boolean) as Object
     if bold then tag = "b"
     key = "font_" + tag + size.ToStr()
     if g.hasField(key) then return g[key]
-    if not g.hasField("interOk") then
-        fs = CreateObject("roFileSystem")
-        g.addFields({ interOk: fs.Exists("libpkg:/fonts/Inter-Regular.ttf") and fs.Exists("libpkg:/fonts/Inter-SemiBold.ttf") })
-    end if
     f = CreateObject("roSGNode", "Font")
-    if g.interOk then
-        if bold then f.uri = "libpkg:/fonts/Inter-SemiBold.ttf" else f.uri = "libpkg:/fonts/Inter-Regular.ttf"
-    else
-        if bold then f.uri = "font:BoldSystemFontFile" else f.uri = "font:SystemFontFile"
-    end if
+    if bold then f.uri = "libpkg:/fonts/Inter-SemiBold.ttf" else f.uri = "libpkg:/fonts/Inter-Regular.ttf"
     f.size = size
     fld = {}
     fld[key] = f

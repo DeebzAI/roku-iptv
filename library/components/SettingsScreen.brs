@@ -54,13 +54,10 @@ end sub
 sub runAction(i as Integer)
     sec = CreateObject("roRegistrySection", "IPTVPlayer")
     if i = 0 then
-        fs = CreateObject("roFileSystem")
-        files = fs.ListDir("cachefs:/")
-        if files <> invalid then
-            for each f in files
-                if Left(f, 5) = "cats_" then fs.Delete("cachefs:/" + f)
-            end for
-        end if
+        t = CreateObject("roSGNode", "DataTask")
+        t.request = { mode: "clearcache" }
+        m.cacheTask = t
+        t.control = "RUN"
         m.msg.text = "Cache cleared. Close and reopen the app to rebuild the lineup."
     else if i = 2 then
         sec.Delete("resume")

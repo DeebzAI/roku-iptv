@@ -58,6 +58,15 @@ sub execute()
         doItems(req)
     else if mode = "vodinfo" then
         doVodInfo(req)
+    else if mode = "clearcache" then
+        fs = CreateObject("roFileSystem")
+        files = fs.ListDir("cachefs:/")
+        if files <> invalid then
+            for each f in files
+                if Left(f, 5) = "cats_" then fs.Delete("cachefs:/" + f)
+            end for
+        end if
+        m.top.result = { mode: "clearcache", ok: true }
     else if mode = "seriesinfo" then
         doSeriesInfo(req)
     end if
