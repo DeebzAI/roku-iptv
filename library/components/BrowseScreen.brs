@@ -74,6 +74,7 @@ sub configureRows()
     if m.top.kind = "movies" or m.top.kind = "series" then
         m.cardType = "poster"
         m.rows.itemComponentName = "PosterLite"
+        m.heroTimer.duration = 0.7 ' scrolling fast shouldn't trigger a load per card
         m.rows.translation = [76, 585] ' 24px of room on the left for the focus ring
         m.rows.rowLabelOffset = [[24, 18]]
         m.rows.itemSize = [1844, 512]
@@ -227,6 +228,7 @@ end sub
 sub unloadFarRows(cur as Integer)
     root = m.rows.content
     if root = invalid then return
+    if m.cardType = "poster" then return ' poster rows: swapping nodes while scrolling costs more than it saves
     for i = 0 to root.getChildCount() - 1
         key = i.ToStr()
         if m.loaded[key] = true and Abs(i - cur) > 3 then
@@ -472,6 +474,11 @@ sub hideArt()
 end sub
 
 sub showBackdrop(url as String)
+    ' Movies / TV Shows: reuse the poster (already loaded) instead of fetching a big backdrop per card
+    if m.cardType = "poster" and m.heroItem <> invalid then
+        queueArt("poster", m.heroItem.HDPosterUrl)
+        return
+    end if
     queueArt("backdrop", url)
 end sub
 
@@ -524,6 +531,8 @@ sub loadHeroDetailsImpl()
     else if item.kind = "movie" then
         if m.infoCache[item.id] <> invalid then return
         if m.pendingInfo["vod" + item.id] = true then return
+        if m.infoBusy = true then return ' one details request at a time
+        m.infoBusy = true
         m.pendingInfo["vod" + item.id] = true
         t = CreateObject("roSGNode", "DataTask")
         t.xtream = m.top.xtream
@@ -563,6 +572,7 @@ end sub
 
 sub onVodInfoImpl(event as Object)
     r = event.getData()
+    m.infoBusy = false
     m.pendingInfo.Delete("vod" + r.id)
     m.tasks.Delete("vod" + r.id)
     if m.infoCache.Count() > 60 then m.infoCache = {}
