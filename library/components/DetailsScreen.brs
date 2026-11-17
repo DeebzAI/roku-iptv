@@ -16,6 +16,12 @@ sub init()
     m.seasons = m.top.findNode("seasons")
     m.episodes = m.top.findNode("episodes")
     m.status = m.top.findNode("status")
+    m.stars = m.top.findNode("stars")
+    m.top.findNode("starNum").font = makeFont(26, false)
+    m.resBg = m.top.findNode("resBg")
+    m.resBar = m.top.findNode("resBar")
+    m.resLeft = m.top.findNode("resLeft")
+    m.resLeft.font = makeFont(26, false)
     m.cast = m.top.findNode("cast")
     m.cast.font = makeFont(26, false)
     m.title.font = makeFont(62, true)
@@ -104,13 +110,31 @@ sub layoutFor(kind as String)
         m.title.vertAlign = "bottom"
         m.title.wrap = true
         m.title.maxLines = 2
-        m.meta.translation = [100, 498]
-        m.plot.translation = [100, 550]
+        m.meta.translation = [100, 494]
+        m.plot.translation = [100, 596]
         m.plot.height = 140
         m.plot.maxLines = 4
-        m.playBtn.translation = [100, 790]
-        m.restartBtn.translation = [470, 790]
+        m.cast.translation = [100, 742]
+        m.playBtn.translation = [100, 796]
+        m.restartBtn.translation = [470, 796]
     end if
+end sub
+
+' Rating as five stars (0-10 -> 0-5), dimmed when empty.
+sub showStars(rating as Dynamic)
+    v = 0.0
+    if rating <> invalid and rating <> "" then v = Val(rating)
+    if v <= 0 then
+        m.stars.visible = false
+        return
+    end if
+    filled = Int(v / 2 + 0.5)
+    for i = 1 to 5
+        st = m.top.findNode("star" + i.ToStr())
+        if i <= filled then st.opacity = 1.0 else st.opacity = 0.25
+    end for
+    m.top.findNode("starNum").text = Str(Int(v * 10) / 10.0).Trim()
+    m.stars.visible = true
 end sub
 
 sub showBackdrop(url as String)
@@ -137,7 +161,8 @@ sub onInfo()
     if r.plot <> invalid and r.plot <> "" then m.plot.text = r.plot
     if r.backdrop <> invalid and r.backdrop <> "" then showBackdrop(r.backdrop)
     if m.mode = "movie" then
-        m.meta.text = joinParts([r.year, r.genre, r.duration, r.quality, ratingText(r.rating)])
+        m.meta.text = joinParts([r.year, r.genre, r.duration, r.quality])
+        showStars(r.rating)
         if r.cast <> invalid and r.cast <> "" then
             m.cast.text = "Starring  " + r.cast
             m.cast.visible = true
@@ -225,12 +250,31 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
     return false
 end function
 
+sub showResumeBar(posSecs as Integer, dur as Integer)
+    on = (posSecs > 0 and dur > posSecs)
+    m.resBg.visible = on
+    m.resBar.visible = on
+    m.resLeft.visible = on
+    if not on then return
+    m.resBar.width = Int(370 * posSecs / dur)
+    left = dur - posSecs
+    h = Int(left / 3600)
+    mi = Int((left MOD 3600) / 60)
+    if h > 0 then
+        m.resLeft.text = h.ToStr() + "h " + mi.ToStr() + "m left"
+    else
+        m.resLeft.text = mi.ToStr() + " min left"
+    end if
+end sub
+
 ' Movie buttons: "Resume (32:10)" + "Start Over" when there's a saved spot.
 sub refreshResume()
     item = m.top.item
     if item = invalid then return
     if m.mode = "movie" then
         posSecs = getResume("m" + item.id)
+        dur = getResumeDur("m" + item.id)
+        showResumeBar(posSecs, dur)
         if posSecs > 0 then
             m.playLabel.text = "Resume from " + fmtClock(posSecs)
             m.restartBtn.visible = true

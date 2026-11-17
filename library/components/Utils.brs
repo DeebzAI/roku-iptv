@@ -127,6 +127,13 @@ function getResume(key as String) as Integer
     return e.p
 end function
 
+function getResumeDur(key as String) as Integer
+    if key = "" then return 0
+    e = resumeTable()[key]
+    if e = invalid or e.d = invalid then return 0
+    return e.d
+end function
+
 sub saveResume(key as String, posSecs as Integer, dur as Integer, meta = invalid as Dynamic)
     if key = "" then return
     t = resumeTable()
