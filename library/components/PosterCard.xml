@@ -22,7 +22,7 @@
       <Group id="game" visible="false">
         <Poster id="badgeBg" uri="libpkg:/images/pill.9.png" translation="[22,20]" height="42" />
         <Label id="badge" translation="[22,20]" height="42" horizAlign="center" vertAlign="center" color="0xFFFFFFFF" />
-        <Label id="league" translation="[180,20]" width="158" height="40" horizAlign="right" vertAlign="center" color="0xFFFFFF99" />
+        <Label id="league" translation="[180,20]" width="158" height="40" horizAlign="right" vertAlign="center" color="0x8E8E93FF" />
         <Poster id="logoA" translation="[22,76]" width="48" height="48" loadDisplayMode="scaleToFit" loadWidth="96" loadHeight="96" visible="false" />
         <Poster id="logoB" translation="[22,132]" width="48" height="48" loadDisplayMode="scaleToFit" loadWidth="96" loadHeight="96" visible="false" />
         <Label id="team1" translation="[24,78]" width="312" color="0xFFFFFFFF" />
@@ -33,7 +33,7 @@
       <Rectangle id="prog" height="8" color="0xFFFFFFFF" visible="false" />
       <Poster id="ring" uri="libpkg:/images/ring.9.png" opacity="0" />
     </Group>
-    <Label id="title" color="0xFFFFFF99" wrap="true" maxLines="2" />
+    <Label id="title" color="0x8E8E93FF" wrap="true" maxLines="2" />
   </children>
   <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
   <script type="text/brightscript" uri="libpkg:/components/PosterCard.brs" />

@@ -20,18 +20,18 @@
       <Poster id="heroLogo" translation="[1180,120]" width="620" height="350" loadDisplayMode="scaleToFit" loadWidth="620" loadHeight="350" visible="false" />
       <Group id="heroTeams" visible="false">
         <Poster id="heroTeamA" translation="[1070,110]" width="360" height="360" loadDisplayMode="scaleToFit" loadWidth="360" loadHeight="360" />
-        <Label id="heroAt" translation="[1420,250]" width="80" horizAlign="center" color="0xFFFFFF99" />
+        <Label id="heroAt" translation="[1420,250]" width="80" horizAlign="center" color="0x8E8E93FF" />
         <Poster id="heroTeamB" translation="[1490,110]" width="360" height="360" loadDisplayMode="scaleToFit" loadWidth="360" loadHeight="360" />
       </Group>
       <Poster id="heroFade" width="1920" height="1080" uri="libpkg:/images/hero_fade.png" />
       <Label id="heroTitle" translation="[100,160]" width="1150" wrap="true" maxLines="2" color="0xFFFFFFFF" />
-      <Label id="heroMeta" translation="[100,300]" width="1150" color="0xFFFFFF99" />
+      <Label id="heroMeta" translation="[100,300]" width="1150" color="0x8E8E93FF" />
       <Rectangle id="heroBarBg" translation="[100,352]" width="420" height="6" color="0xFFFFFF26" visible="false" />
       <Rectangle id="heroBar" translation="[100,352]" width="0" height="6" color="0xFFFFFFFF" visible="false" />
       <Label id="heroDesc" translation="[100,375]" width="1050" height="140" wrap="true" maxLines="3" color="0xFFFFFFFF" />
     </Group>
     <RowList id="rows" translation="[100,585]" />
-    <Label id="status" translation="[0,700]" width="1920" horizAlign="center" color="0xFFFFFF99" />
+    <Label id="status" translation="[0,700]" width="1920" horizAlign="center" color="0x8E8E93FF" />
   </children>
   <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
   <script type="text/brightscript" uri="libpkg:/components/BrowseScreen.brs" />

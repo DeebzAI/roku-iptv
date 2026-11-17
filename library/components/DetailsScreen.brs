@@ -295,13 +295,13 @@ sub styleButtons()
     focusedPlay = not m.restartBtn.hasFocus()
     if focusedPlay then
         m.playPill.opacity = 1.0
-        m.playLabel.color = "0x0A0A0AFF"
+        m.playLabel.color = "0x1A1A1AFF"
         m.restartPill.opacity = 0.18
         m.restartLabel.color = "0xFFFFFFFF"
     else
         m.playPill.opacity = 0.18
         m.playLabel.color = "0xFFFFFFFF"
         m.restartPill.opacity = 1.0
-        m.restartLabel.color = "0x0A0A0AFF"
+        m.restartLabel.color = "0x1A1A1AFF"
     end if
 end sub

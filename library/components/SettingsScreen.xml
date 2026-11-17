@@ -16,9 +16,9 @@
   <children>
     <Label id="heading" translation="[100,150]" width="1000" text="Settings" color="0xFFFFFFFF" />
     <LabelList id="list" translation="[100,250]" itemSize="[900,72]" numRows="6"
-      vertFocusAnimationStyle="floatingFocus" color="0xFFFFFFFF" focusedColor="0x0A0A0AFF"
+      vertFocusAnimationStyle="floatingFocus" color="0xFFFFFFFF" focusedColor="0x1A1A1AFF"
       focusBitmapUri="libpkg:/images/pill.9.png" textHorizOffset="28" />
-    <Label id="info" translation="[1100,250]" width="720" wrap="true" lineSpacing="10" color="0xFFFFFF99" />
+    <Label id="info" translation="[1100,250]" width="720" wrap="true" lineSpacing="10" color="0x8E8E93FF" />
     <Label id="msg" translation="[100,760]" width="1000" color="0xFFFFFFFF" />
   </children>
   <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />

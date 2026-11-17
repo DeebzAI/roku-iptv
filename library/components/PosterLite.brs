@@ -67,5 +67,5 @@ sub onFocus()
     m.card.scale = [s, s]
     m.ring.opacity = fp
     m.title.translation = [24, 385 + 15 * fp]
-    if fp > 0.5 then m.title.color = "0xFFFFFFFF" else m.title.color = "0xFFFFFF99"
+    if fp > 0.5 then m.title.color = "0xFFFFFFFF" else m.title.color = "0x8E8E93FF"
 end sub

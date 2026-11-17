@@ -15,11 +15,11 @@
     <Label id="catName" translation="[100,140]" width="1000" color="0xFFFFFFFF" />
     <Poster uri="libpkg:/images/arrow_left.png" translation="[1470,152]" width="36" height="36" />
     <Poster uri="libpkg:/images/arrow_right.png" translation="[1516,152]" width="36" height="36" />
-    <Label id="catHint" translation="[1566,150]" width="260" color="0xFFFFFF99" text="Change category" />
-    <Label id="colNow" translation="[610,196]" width="400" color="0xFFFFFF59" text="NOW" />
-    <Label id="colNext" translation="[1400,196]" width="400" color="0xFFFFFF59" text="UP NEXT" />
+    <Label id="catHint" translation="[1566,150]" width="260" color="0x8E8E93FF" text="Change category" />
+    <Label id="colNow" translation="[610,196]" width="400" color="0x636366FF" text="NOW" />
+    <Label id="colNext" translation="[1400,196]" width="400" color="0x636366FF" text="UP NEXT" />
     <MarkupList id="list" translation="[100,232]" itemComponentName="GuideRow" />
-    <Label id="status" translation="[0,600]" width="1920" horizAlign="center" color="0xFFFFFF99" />
+    <Label id="status" translation="[0,600]" width="1920" horizAlign="center" color="0x8E8E93FF" />
   </children>
   <script type="text/brightscript" uri="libpkg:/components/Utils.brs" />
   <script type="text/brightscript" uri="libpkg:/components/GuideScreen.brs" />

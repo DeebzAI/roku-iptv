@@ -37,7 +37,7 @@ sub render()
     nt = c.nowTitle
     if nt = invalid or nt = "" then
         m.nowTitle.text = "Loading guide..."
-        m.nowTitle.color = "0xFFFFFF59"
+        m.nowTitle.color = "0x636366FF"
         m.nowSub.text = ""
         m.nextText.text = ""
         m.progBg.visible = false
