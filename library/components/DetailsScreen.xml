@@ -31,10 +31,11 @@
     <Label id="cast" translation="[100,700]" width="1000" height="36" color="0x636366FF" visible="false" />
 
     <Group id="playBtn" translation="[100,540]" focusable="true">
-      <Poster id="playPill" uri="libpkg:/images/pill.9.png" width="340" height="80" />
-      <Label id="playLabel" width="340" height="80" horizAlign="center" vertAlign="center" text="Play" color="0x1A1A1AFF" />
+      <Poster id="playPill" uri="libpkg:/images/pill.9.png" width="420" height="80" />
+      <Poster id="playIcon" uri="libpkg:/images/play.png" translation="[48,22]" width="36" height="36" blendColor="0x1A1A1AFF" />
+      <Label id="playLabel" translation="[100,0]" width="300" height="80" horizAlign="left" vertAlign="center" text="Play" color="0x1A1A1AFF" />
     </Group>
-    <Group id="restartBtn" translation="[470,540]" focusable="true" visible="false">
+    <Group id="restartBtn" translation="[560,540]" focusable="true" visible="false">
       <Poster id="restartPill" uri="libpkg:/images/pill.9.png" width="300" height="80" />
       <Label id="restartLabel" width="300" height="80" horizAlign="center" vertAlign="center" text="Start Over" color="0x1A1A1AFF" />
     </Group>

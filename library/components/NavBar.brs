@@ -13,6 +13,13 @@ sub build()
     m.labels = []
     items = m.top.items
     startX = Int((1920 - m.tabW * items.Count()) / 2)
+    cap = m.tabs.createChild("Poster")
+    cap.uri = "libpkg:/images/pill.9.png"
+    cap.blendColor = "0x000000FF"
+    cap.opacity = 0.5
+    cap.translation = [startX + 2, -8]
+    cap.width = m.tabW * items.Count() - 4
+    cap.height = 70
     for i = 0 to items.Count() - 1
         g = m.tabs.createChild("Group")
         g.translation = [startX + i * m.tabW, 0]

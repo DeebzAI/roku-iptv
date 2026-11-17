@@ -13,6 +13,7 @@ sub init()
     m.heroTeams = m.top.findNode("heroTeams")
     m.top.findNode("heroAt").font = makeFont(40, true)
     m.heroTint = m.top.findNode("heroTint")
+    m.heroWash = m.top.findNode("heroWash")
     m.liveByRow = {}
     m.heroBar = m.top.findNode("heroBar")
     m.heroBarBg = m.top.findNode("heroBarBg")
@@ -67,7 +68,7 @@ sub configureRows()
     m.rows.showRowLabel = [true]
     m.rows.rowLabelOffset = [[0, 18]]
     m.rows.rowLabelColor = "0xFFFFFFFF"
-    m.rows.rowLabelFont = makeFont(32, true)
+    m.rows.rowLabelFont = makeFont(36, true)
     m.rows.rowFocusAnimationStyle = "floatingFocus"
     m.rows.itemSpacing = [0, 26]
     if m.top.kind = "movies" or m.top.kind = "series" then
@@ -75,7 +76,7 @@ sub configureRows()
         m.rows.itemComponentName = "PosterLite"
         m.rows.translation = [76, 585] ' 24px of room on the left for the focus ring
         m.rows.rowLabelOffset = [[24, 18]]
-        m.rows.itemSize = [1844, 496]
+        m.rows.itemSize = [1844, 512]
         m.rows.rowItemSize = [[230, 345]]
         m.rows.rowItemSpacing = [[34, 0]]
     else
@@ -425,6 +426,13 @@ end sub
 sub applyArt()
     if m.artKind = invalid then return
     m.heroTeams.visible = false
+    ' soft colour wash from a tiny copy of the artwork (movies / shows only)
+    if (m.artKind = "backdrop" or m.artKind = "poster") and m.artUrl <> "" then
+        if m.heroWash.uri <> m.artUrl then m.heroWash.uri = m.artUrl
+        m.heroWash.visible = true
+    else
+        m.heroWash.visible = false
+    end if
     if m.artKind = "teams" and m.artTeams <> invalid then
         m.heroBackdrop.visible = false
         m.heroPoster.visible = false
@@ -456,6 +464,7 @@ sub applyArt()
 end sub
 
 sub hideArt()
+    m.heroWash.visible = false
     m.heroTeams.visible = false
     m.heroBackdrop.visible = false
     m.heroPoster.visible = false

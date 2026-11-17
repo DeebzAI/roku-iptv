@@ -12,6 +12,7 @@
       <Rectangle id="bg" width="230" height="345" color="0xFFFFFF14" />
       <Label id="placeholder" translation="[16,16]" width="198" height="313" horizAlign="center" vertAlign="center" wrap="true" maxLines="5" color="0x8E8E93FF" />
       <Poster id="img" width="230" height="345" loadDisplayMode="scaleToFill" loadWidth="230" loadHeight="345" visible="false" />
+      <Poster id="mask" uri="libpkg:/images/corner_mask.9.png" width="230" height="345" />
       <Rectangle id="progBg" translation="[16,321]" width="198" height="8" color="0x00000099" visible="false" />
       <Rectangle id="prog" translation="[16,321]" width="0" height="8" color="0xFFFFFFFF" visible="false" />
       <Poster id="ring" uri="libpkg:/images/ring.9.png" translation="[-7,-7]" width="244" height="359" opacity="0" />

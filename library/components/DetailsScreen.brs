@@ -11,6 +11,7 @@ sub init()
     m.playPill = m.top.findNode("playPill")
     m.restartPill = m.top.findNode("restartPill")
     m.playLabel = m.top.findNode("playLabel")
+    m.playIcon = m.top.findNode("playIcon")
     m.restartLabel = m.top.findNode("restartLabel")
     m.top.findNode("restartLabel").font = makeFont(32, true)
     m.seasons = m.top.findNode("seasons")
@@ -130,7 +131,7 @@ sub layoutFor(kind as String)
         m.plot.maxLines = 4
         m.cast.translation = [100, 742]
         m.playBtn.translation = [100, 796]
-        m.restartBtn.translation = [470, 796]
+        m.restartBtn.translation = [560, 796]
     end if
 end sub
 
@@ -344,11 +345,13 @@ sub styleButtons()
     if focusedPlay then
         m.playPill.opacity = 1.0
         m.playLabel.color = "0x1A1A1AFF"
+        m.playIcon.blendColor = "0x1A1A1AFF"
         m.restartPill.opacity = 0.18
         m.restartLabel.color = "0xFFFFFFFF"
     else
         m.playPill.opacity = 0.18
         m.playLabel.color = "0xFFFFFFFF"
+        m.playIcon.blendColor = "0xFFFFFFFF"
         m.restartPill.opacity = 1.0
         m.restartLabel.color = "0x1A1A1AFF"
     end if
