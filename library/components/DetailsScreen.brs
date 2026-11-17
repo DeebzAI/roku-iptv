@@ -33,6 +33,7 @@ sub init()
     m.mode = "movie"
     m.seriesData = invalid
     m.seasons.observeField("itemFocused", "onSeasonFocused")
+    m.seasons.observeField("focusedChild", "onSeasonsFocus")
     m.episodes.observeField("itemSelected", "onEpisodeSelected")
     m.top.observeField("focusedChild", "onFocusChanged")
 end sub
@@ -195,7 +196,7 @@ sub onInfo()
     for each s in r.seasons
         c = content.createChild("ContentNode")
         c.title = "Season " + s
-        c.addFields({ sel: false })
+        c.addFields({ sel: false, act: true })
     end for
     content.getChild(0).sel = true
     m.seasons.content = content
@@ -203,6 +204,15 @@ sub onInfo()
     m.episodes.visible = true
     fillEpisodes(0)
     if m.top.isInFocusChain() then m.seasons.setFocus(true)
+end sub
+
+sub onSeasonsFocus()
+    sc = m.seasons.content
+    if sc = invalid then return
+    has = m.seasons.hasFocus()
+    for i = 0 to sc.getChildCount() - 1
+        sc.getChild(i).act = has
+    end for
 end sub
 
 sub onSeasonFocused()
