@@ -200,12 +200,15 @@ sub fillEpisodes(idx as Integer)
     m.currentSeason = key
     list = m.seriesData.episodes[key]
     content = CreateObject("roSGNode", "ContentNode")
+    saved = resumeTable() ' read once, not once per episode
     for each e in list
         c = content.createChild("ContentNode")
         label = e.title
         if e.num <> "" then label = e.num + ".   " + label
         if e.duration <> "" then label = label + "   (" + e.duration + ")"
-        posSecs = getResume("e" + e.id)
+        posSecs = 0
+        hit = saved["e" + e.id]
+        if hit <> invalid and hit.p <> invalid then posSecs = hit.p
         if posSecs > 0 then label = label + "   ·  resume at " + fmtClock(posSecs)
         c.title = label
     end for
