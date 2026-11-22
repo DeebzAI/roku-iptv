@@ -88,7 +88,7 @@ sub updateLiveBadge()
 end sub
 
 function appVersion() as String
-    return "v13.6"
+    return "v13.7"
 end function
 
 sub onSettingsAction(event as Object)
@@ -338,7 +338,7 @@ sub playAttempt()
     fmt = req.fmt
     sendUa = true
     ' attempt 0: as given  /  1: without the custom User-Agent  /  2: other container type
-    if m.attempt = 1 then sendUa = false
+    if m.attempt = 1 and not req.live then sendUa = false ' live attempt 1 is the .ts retry, which keeps the UA
     if m.attempt = 2 then fmt = altFormat(req.fmt)
     url = req.url
     ' live fallback: if the HLS playlist can't be decoded, try the raw transport stream once
@@ -465,6 +465,7 @@ sub onSplashFade()
 end sub
 
 sub onVideoState()
+    print "IPTV player state: "; m.video.state
     if m.video.state = "playing" then hideSplash(true)
     if m.video.state = "finished" then
         if m.resumeKey <> invalid and m.resumeKey <> "" then saveResume(m.resumeKey, 0, 0)
