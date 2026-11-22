@@ -88,7 +88,7 @@ sub updateLiveBadge()
 end sub
 
 function appVersion() as String
-    return "v13.5"
+    return "v13.6"
 end function
 
 sub onSettingsAction(event as Object)
@@ -340,14 +340,20 @@ sub playAttempt()
     ' attempt 0: as given  /  1: without the custom User-Agent  /  2: other container type
     if m.attempt = 1 then sendUa = false
     if m.attempt = 2 then fmt = altFormat(req.fmt)
+    url = req.url
+    ' live fallback: if the HLS playlist can't be decoded, try the raw transport stream once
+    if req.live and m.attempt = 1 and Right(url, 5) = ".m3u8" then
+        url = Left(url, Len(url) - 5) + ".ts"
+        fmt = "ts"
+    end if
     content = CreateObject("roSGNode", "ContentNode")
-    content.url = req.url
+    content.url = url
     content.title = req.title
     content.streamFormat = fmt
     content.live = req.live
     if sendUa and m.ua <> "" then content.HttpHeaders = ["User-Agent:" + m.ua]
     if not req.live and m.startAt <> invalid and m.startAt > 0 then content.PlayStart = m.startAt
-    print "IPTV play attempt "; m.attempt; " fmt="; fmt; " ua="; sendUa; " url="; req.url
+    print "IPTV play attempt "; m.attempt; " fmt="; fmt; " ua="; sendUa; " url="; url
     ' live TV: the player must not seek on replay/rewind (replay = previous channel)
     m.video.enableTrickPlay = not req.live
     m.video.enableUI = not req.live
@@ -472,7 +478,13 @@ sub onVideoState()
     detail = ""
     if m.video.errorStr <> invalid then detail = m.video.errorStr
     print "IPTV playback error "; code; " "; msg; " | "; detail
-    if m.playReq <> invalid and (m.playReq.live or m.attempt >= 2) then hideSplash(false)
+    liveRetry = (m.playReq <> invalid and m.playReq.live and m.attempt = 0 and Right(m.playReq.url, 5) = ".m3u8")
+    if m.playReq <> invalid and not liveRetry and (m.playReq.live or m.attempt >= 2) then hideSplash(false)
+    if liveRetry then
+        m.attempt = 1
+        playAttempt()
+        return
+    end if
     if m.playReq <> invalid and not m.playReq.live and m.attempt < 2 then
         m.attempt = m.attempt + 1
         playAttempt()
