@@ -88,7 +88,7 @@ sub updateLiveBadge()
 end sub
 
 function appVersion() as String
-    return "v13.8"
+    return "v13.9"
 end function
 
 sub onSettingsAction(event as Object)
@@ -459,8 +459,30 @@ sub onSplashFade()
     if m.splashFade.state = "stopped" and m.splash.opacity < 0.05 then m.splash.visible = false
 end sub
 
+sub logAudio()
+    try
+        tr = m.video.availableAudioTracks
+        n = 0
+        if tr <> invalid then n = tr.Count()
+        print "IPTV audio tracks: "; n; " current="; asStr(m.video.audioTrack)
+        if tr <> invalid then
+            for each t in tr
+                print "IPTV   track "; asStr(t.Track); " lang="; asStr(t.Language); " name="; asStr(t.Name)
+            end for
+        end if
+        si = m.video.streamInfo
+        if si <> invalid then
+            print "IPTV stream info: url="; asStr(si.streamUrl); " bitrate="; asStr(si.streamBitrate); " measured="; asStr(si.measuredBitrate)
+        end if
+        print "IPTV audio format: "; asStr(m.video.audioFormat); " / "; asStr(m.video.audioFormat2)
+    catch e
+        print "IPTV logAudio failed"
+    end try
+end sub
+
 sub onVideoState()
     print "IPTV player state: "; m.video.state
+    logAudio()
     if m.video.state = "playing" then hideSplash(true)
     if m.video.state = "finished" then
         if m.resumeKey <> invalid and m.resumeKey <> "" then saveResume(m.resumeKey, 0, 0)
