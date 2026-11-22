@@ -88,7 +88,7 @@ sub updateLiveBadge()
 end sub
 
 function appVersion() as String
-    return "v13.9"
+    return "v13.10"
 end function
 
 sub onSettingsAction(event as Object)
@@ -348,6 +348,7 @@ sub playAttempt()
     content.live = req.live
     if sendUa and m.ua <> "" then content.HttpHeaders = ["User-Agent:" + m.ua]
     if not req.live and m.startAt <> invalid and m.startAt > 0 then content.PlayStart = m.startAt
+    print "IPTV play title: "; req.title
     print "IPTV play attempt "; m.attempt; " fmt="; fmt; " ua="; sendUa; " url="; url
     ' live TV: the player must not seek on replay/rewind (replay = previous channel)
     m.video.enableTrickPlay = not req.live
